@@ -31,6 +31,7 @@ import org.apache.nifi.annotation.documentation.Tags;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.expression.ExpressionLanguageScope;
 import org.apache.nifi.flowfile.FlowFile;
+import org.apache.nifi.oauth.OAuthAccessTokenService;
 import org.apache.nifi.processor.AbstractProcessor;
 import org.apache.nifi.processor.ProcessContext;
 import org.apache.nifi.processor.ProcessSession;
@@ -40,8 +41,6 @@ import org.apache.nifi.processor.util.StandardValidators;
 
 import javax.json.Json;
 import javax.json.JsonObject;
-import javax.json.stream.JsonParser;
-import javax.json.stream.JsonParserFactory;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -56,16 +55,16 @@ public class PostSlack extends AbstractProcessor {
 
     private static final String SLACK_FILE_UPLOAD_URL = "https://slack.com/api/files.upload";
 
-    // it might not make sense to make it configurable, it should never be changed (only if Slack changes it)
+    // it might not make sense to make it configurable as it should never be changed (only if Slack changes it)
     public static final PropertyDescriptor FILE_UPLOAD_URL = new PropertyDescriptor.Builder()
             .name("file-upload-url")
             .displayName("Slack Web API file upload URL")
-            .description("The POST URL provided by Slack Web API to upload files to channel(s).")
+            .description("The POST URL provided by Slack Web API to upload files to channel(s). It only needs to be changed" +
+                    " if Slack changes its API URL.")
             .required(true)
             .defaultValue(SLACK_FILE_UPLOAD_URL)
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .addValidator(StandardValidators.URL_VALIDATOR)
-            .expressionLanguageSupported(ExpressionLanguageScope.FLOWFILE_ATTRIBUTES)
             .build();
 
     public static final PropertyDescriptor ACCESS_TOKEN = new PropertyDescriptor.Builder()
@@ -73,9 +72,7 @@ public class PostSlack extends AbstractProcessor {
             .displayName("Slack Access Token")
             .description("Authentication token")
             .required(true)
-            .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
-            .expressionLanguageSupported(ExpressionLanguageScope.FLOWFILE_ATTRIBUTES)
-            .sensitive(true)
+            .identifiesControllerService(OAuthAccessTokenService.class)
             .build();
 
     public static final PropertyDescriptor CHANNELS = new PropertyDescriptor.Builder()
@@ -113,7 +110,7 @@ public class PostSlack extends AbstractProcessor {
             .description("FlowFiles are routed to failure if unable to be sent to Slack")
             .build();
 
-    public static final List<PropertyDescriptor> descriptors = Collections.unmodifiableList(
+    public static final List<PropertyDescriptor> properties = Collections.unmodifiableList(
             Arrays.asList(FILE_UPLOAD_URL, ACCESS_TOKEN, CHANNELS, COMMENT, TITLE));
 
     public static final Set<Relationship> relationships = Collections.unmodifiableSet(
@@ -121,7 +118,7 @@ public class PostSlack extends AbstractProcessor {
 
     @Override
     public final List<PropertyDescriptor> getSupportedPropertyDescriptors() {
-        return descriptors;
+        return properties;
     }
 
     @Override
@@ -159,8 +156,9 @@ public class PostSlack extends AbstractProcessor {
             HttpEntity multipart = multipartBuilder.build();
 
             HttpUriRequest post = RequestBuilder.post()
-                    .setUri(context.getProperty(FILE_UPLOAD_URL).evaluateAttributeExpressions(flowFile).getValue())
-                    .setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + context.getProperty(ACCESS_TOKEN).evaluateAttributeExpressions(flowFile).getValue())
+                    .setUri(context.getProperty(FILE_UPLOAD_URL).getValue())
+                    .setHeader(HttpHeaders.AUTHORIZATION, "Bearer " +
+                            context.getProperty(ACCESS_TOKEN).asControllerService(OAuthAccessTokenService.class).getAccessToken())
                     .setEntity(multipart)
                     .build();
 

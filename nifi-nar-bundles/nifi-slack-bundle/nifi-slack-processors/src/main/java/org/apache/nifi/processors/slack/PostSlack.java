@@ -178,7 +178,7 @@ public class PostSlack extends AbstractProcessor {
             getLogger().info("Slack response: " + responseJson.toString());
 
             if (!responseJson.getBoolean("ok")) {
-                throw new SlackException(responseJson.getString("Slack error response: " + responseJson.getString("error")));
+                throw new SlackException("Slack error response: " + responseJson.getString("error"));
             }
 
             // TODO: log warnings coming slack response
@@ -189,8 +189,8 @@ public class PostSlack extends AbstractProcessor {
             session.getProvenanceReporter().send(flowFile, context.getProperty(FILE_UPLOAD_URL).evaluateAttributeExpressions(flowFile).getValue());
 
             // TODO: close resources in finaly / try-with-resources
-            //response.close();
-            //client.close();
+            response.close();
+            client.close();
         } catch (IOException | SlackException e) {
             getLogger().error("Failed to upload file to Slack", e);
             flowFile = session.penalize(flowFile);

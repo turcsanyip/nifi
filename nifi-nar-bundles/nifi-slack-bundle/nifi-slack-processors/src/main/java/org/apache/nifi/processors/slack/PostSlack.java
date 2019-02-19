@@ -31,6 +31,7 @@ import org.apache.nifi.annotation.documentation.Tags;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.expression.ExpressionLanguageScope;
 import org.apache.nifi.flowfile.FlowFile;
+import org.apache.nifi.flowfile.attributes.CoreAttributes;
 import org.apache.nifi.oauth.OAuthAccessTokenService;
 import org.apache.nifi.processor.AbstractProcessor;
 import org.apache.nifi.processor.ProcessContext;
@@ -55,7 +56,6 @@ public class PostSlack extends AbstractProcessor {
 
     private static final String SLACK_FILE_UPLOAD_URL = "https://slack.com/api/files.upload";
 
-    // it might not make sense to make it configurable as it should never be changed (only if Slack changes it)
     public static final PropertyDescriptor FILE_UPLOAD_URL = new PropertyDescriptor.Builder()
             .name("file-upload-url")
             .displayName("Slack Web API file upload URL")
@@ -84,6 +84,26 @@ public class PostSlack extends AbstractProcessor {
             .expressionLanguageSupported(ExpressionLanguageScope.FLOWFILE_ATTRIBUTES)
             .build();
 
+    public static final PropertyDescriptor FILENAME = new PropertyDescriptor.Builder()
+            .name("filename")
+            .displayName("Filename")
+            .description("Name of the file")
+            .required(true)
+            .defaultValue("${" + CoreAttributes.FILENAME.key() + "}")
+            .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
+            .expressionLanguageSupported(ExpressionLanguageScope.FLOWFILE_ATTRIBUTES)
+            .build();
+
+    public static final PropertyDescriptor MIME_TYPE = new PropertyDescriptor.Builder()
+            .name("mime-type")
+            .displayName("Mime Type")
+            .description("Mime type of the file")
+            .required(true)
+            .defaultValue("${" + CoreAttributes.MIME_TYPE.key() + "}")
+            .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
+            .expressionLanguageSupported(ExpressionLanguageScope.FLOWFILE_ATTRIBUTES)
+            .build();
+
     public static final PropertyDescriptor COMMENT = new PropertyDescriptor.Builder()
             .name("comment")
             .displayName("Comment")
@@ -95,7 +115,7 @@ public class PostSlack extends AbstractProcessor {
     public static final PropertyDescriptor TITLE = new PropertyDescriptor.Builder()
             .name("title")
             .displayName("Title")
-            .description("Title of file")
+            .description("Title of the file")
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .expressionLanguageSupported(ExpressionLanguageScope.FLOWFILE_ATTRIBUTES)
             .build();
@@ -111,7 +131,7 @@ public class PostSlack extends AbstractProcessor {
             .build();
 
     public static final List<PropertyDescriptor> properties = Collections.unmodifiableList(
-            Arrays.asList(FILE_UPLOAD_URL, ACCESS_TOKEN, CHANNELS, COMMENT, TITLE));
+            Arrays.asList(FILE_UPLOAD_URL, ACCESS_TOKEN, CHANNELS, FILENAME, MIME_TYPE, COMMENT, TITLE));
 
     public static final Set<Relationship> relationships = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList(REL_SUCCESS, REL_FAILURE)));
@@ -148,9 +168,26 @@ public class PostSlack extends AbstractProcessor {
                 multipartBuilder.addTextBody("title", title);
             }
             
-            String filename = flowFile.getAttribute("filename");  // is there a constant for the key? can the value be null?
+            String filename = flowFile.getAttribute(CoreAttributes.FILENAME.key());
+            if (filename == null) {
+                filename = "file";
+                getLogger().info("Filename not specified, will be set to " + filename);
+            }
             multipartBuilder.addTextBody("filename", filename);
-            multipartBuilder.addBinaryBody("file", session.read(flowFile), ContentType.IMAGE_PNG, filename); // TODO: content type needs to be determined at runtime
+
+            ContentType mimeType;
+            String mimeTypeStr = flowFile.getAttribute(CoreAttributes.MIME_TYPE.key());
+            if (mimeTypeStr == null) {
+                mimeType = ContentType.APPLICATION_OCTET_STREAM;
+                getLogger().info("Mime type not specified, will be set to " + mimeType.getMimeType());
+            } else {
+                mimeType = ContentType.getByMimeType(mimeTypeStr);
+                if (mimeType == null) {
+                    mimeType = ContentType.APPLICATION_OCTET_STREAM;
+                    getLogger().info("Unknown mime type specified, will be set to " + mimeType.getMimeType());
+                }
+            }
+            multipartBuilder.addBinaryBody("file", session.read(flowFile), mimeType, filename);
             
             
             HttpEntity multipart = multipartBuilder.build();
@@ -181,14 +218,14 @@ public class PostSlack extends AbstractProcessor {
                 throw new SlackException("Slack error response: " + responseJson.getString("error"));
             }
 
-            // TODO: log warnings coming slack response
+            // TODO: log warnings coming in the slack response
 
             // TODO: add urls or other important data from the response to the flowfile attributes
 
             session.transfer(flowFile, REL_SUCCESS);
             session.getProvenanceReporter().send(flowFile, context.getProperty(FILE_UPLOAD_URL).evaluateAttributeExpressions(flowFile).getValue());
 
-            // TODO: close resources in finaly / try-with-resources
+            // TODO: close resources in finally / try-with-resources
             response.close();
             client.close();
         } catch (IOException | SlackException e) {

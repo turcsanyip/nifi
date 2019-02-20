@@ -40,7 +40,6 @@ import org.apache.nifi.annotation.lifecycle.OnScheduled;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.components.Validator;
 import org.apache.nifi.flowfile.FlowFile;
-import org.apache.nifi.oauth.OAuthAccessTokenService;
 import org.apache.nifi.processor.AbstractProcessor;
 import org.apache.nifi.processor.ProcessContext;
 import org.apache.nifi.processor.ProcessSession;
@@ -56,7 +55,7 @@ public class ListenSlack extends AbstractProcessor {
     .name("API Token")
     .description("Token for the slack bot user")
     .required(true)
-    .identifiesControllerService(OAuthAccessTokenService.class)
+          .sensitive(true)
     .build();
 
   private static final PropertyDescriptor MESSAGE_TYPES = new PropertyDescriptor
@@ -131,7 +130,7 @@ public class ListenSlack extends AbstractProcessor {
     if (!isRunning()) {
       try {
         rtm = new Slack().rtm(
-          context.getProperty(API_TOKEN).asControllerService(OAuthAccessTokenService.class).getAccessToken()
+          context.getProperty(API_TOKEN).getValue()
         );
         rtm.addMessageHandler(getMessageHandler(session));
         rtm.addErrorHandler(getErrorHandler());

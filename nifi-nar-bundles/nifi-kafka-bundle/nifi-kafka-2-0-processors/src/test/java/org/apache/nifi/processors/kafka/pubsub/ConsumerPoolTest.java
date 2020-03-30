@@ -78,6 +78,8 @@ public class ConsumerPoolTest {
                 "localhost",
                 logger,
                 true,
+                null,
+                null,
                 StandardCharsets.UTF_8,
                 null) {
             @Override
@@ -96,6 +98,8 @@ public class ConsumerPoolTest {
                 "localhost",
                 logger,
                 true,
+                null,
+                null,
                 StandardCharsets.UTF_8,
                 Pattern.compile(".*")) {
             @Override

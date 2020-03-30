@@ -17,10 +17,12 @@
 
 package org.apache.nifi.processors.kafka.pubsub;
 
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.header.Headers;
 import org.apache.nifi.flowfile.FlowFile;
 import org.apache.nifi.logging.ComponentLog;
@@ -307,5 +309,9 @@ public class PublisherLease implements Closeable {
         }
 
         return tracker;
+    }
+
+    public void sendConsumerOffsets(Map<TopicPartition, OffsetAndMetadata> offsets, String consumerGroupId) {
+        producer.sendOffsetsToTransaction(offsets, consumerGroupId);
     }
 }

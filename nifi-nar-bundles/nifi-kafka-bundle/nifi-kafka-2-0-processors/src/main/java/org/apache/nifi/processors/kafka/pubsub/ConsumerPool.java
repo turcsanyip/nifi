@@ -24,6 +24,7 @@ import org.apache.nifi.processor.ProcessContext;
 import org.apache.nifi.processor.ProcessSession;
 import org.apache.nifi.serialization.RecordReaderFactory;
 import org.apache.nifi.serialization.RecordSetWriterFactory;
+import org.apache.nifi.services.kafka.KafkaTransactionContextService;
 
 import java.io.Closeable;
 import java.nio.charset.Charset;
@@ -55,6 +56,8 @@ public class ConsumerPool implements Closeable {
     private final String securityProtocol;
     private final String bootstrapServers;
     private final boolean honorTransactions;
+    private final KafkaTransactionContextService transactionContextService;
+    private final String consumerGroupId;
     private final RecordReaderFactory readerFactory;
     private final RecordSetWriterFactory writerFactory;
     private final Charset headerCharacterSet;
@@ -94,6 +97,8 @@ public class ConsumerPool implements Closeable {
             final String bootstrapServers,
             final ComponentLog logger,
             final boolean honorTransactions,
+            final KafkaTransactionContextService transactionContextService,
+            final String consumerGroupId,
             final Charset headerCharacterSet,
             final Pattern headerNamePattern) {
         this.pooledLeases = new ArrayBlockingQueue<>(maxConcurrentLeases);
@@ -109,6 +114,8 @@ public class ConsumerPool implements Closeable {
         this.readerFactory = null;
         this.writerFactory = null;
         this.honorTransactions = honorTransactions;
+        this.transactionContextService = transactionContextService;
+        this.consumerGroupId = consumerGroupId;
         this.headerCharacterSet = headerCharacterSet;
         this.headerNamePattern = headerNamePattern;
     }
@@ -124,6 +131,8 @@ public class ConsumerPool implements Closeable {
             final String bootstrapServers,
             final ComponentLog logger,
             final boolean honorTransactions,
+            final KafkaTransactionContextService transactionContextService,
+            final String consumerGroupId,
             final Charset headerCharacterSet,
             final Pattern headerNamePattern) {
         this.pooledLeases = new ArrayBlockingQueue<>(maxConcurrentLeases);
@@ -139,6 +148,8 @@ public class ConsumerPool implements Closeable {
         this.readerFactory = null;
         this.writerFactory = null;
         this.honorTransactions = honorTransactions;
+        this.transactionContextService = transactionContextService;
+        this.consumerGroupId = consumerGroupId;
         this.headerCharacterSet = headerCharacterSet;
         this.headerNamePattern = headerNamePattern;
     }
@@ -169,6 +180,8 @@ public class ConsumerPool implements Closeable {
         this.topics = null;
         this.topicPattern = topics;
         this.honorTransactions = honorTransactions;
+        this.transactionContextService = null;
+        this.consumerGroupId = null;
         this.headerCharacterSet = headerCharacterSet;
         this.headerNamePattern = headerNamePattern;
     }
@@ -199,6 +212,8 @@ public class ConsumerPool implements Closeable {
         this.topics = topics;
         this.topicPattern = null;
         this.honorTransactions = honorTransactions;
+        this.transactionContextService = null;
+        this.consumerGroupId = null;
         this.headerCharacterSet = headerCharacterSet;
         this.headerNamePattern = headerNamePattern;
     }
@@ -301,7 +316,7 @@ public class ConsumerPool implements Closeable {
 
         private SimpleConsumerLease(final Consumer<byte[], byte[]> consumer) {
             super(maxWaitMillis, consumer, demarcatorBytes, keyEncoding, securityProtocol, bootstrapServers,
-                readerFactory, writerFactory, logger, headerCharacterSet, headerNamePattern);
+                readerFactory, writerFactory, logger, headerCharacterSet, headerNamePattern, transactionContextService, consumerGroupId);
             this.consumer = consumer;
         }
 

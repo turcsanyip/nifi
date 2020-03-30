@@ -41,6 +41,7 @@ import org.apache.nifi.processor.ProcessSession;
 import org.apache.nifi.processor.Relationship;
 import org.apache.nifi.processor.exception.ProcessException;
 import org.apache.nifi.processor.util.StandardValidators;
+import org.apache.nifi.services.kafka.KafkaTransactionContextService;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -202,6 +203,13 @@ public class ConsumeKafka_2_0 extends AbstractProcessor {
         .defaultValue("true")
         .required(true)
         .build();
+    static final PropertyDescriptor TRANSACTION_CONTEXT_SERVICE = new PropertyDescriptor.Builder()
+            .name("transaction-context-service")
+            .displayName("Transaction Context Service")
+            .description("")
+            .identifiesControllerService(KafkaTransactionContextService.class)
+            .required(false)
+            .build();
     static final PropertyDescriptor MESSAGE_HEADER_ENCODING = new PropertyDescriptor.Builder()
         .name("message-header-encoding")
         .displayName("Message Header Encoding")
@@ -230,6 +238,7 @@ public class ConsumeKafka_2_0 extends AbstractProcessor {
         descriptors.add(TOPICS);
         descriptors.add(TOPIC_TYPE);
         descriptors.add(HONOR_TRANSACTIONS);
+        descriptors.add(TRANSACTION_CONTEXT_SERVICE);
         descriptors.add(GROUP_ID);
         descriptors.add(AUTO_OFFSET_RESET);
         descriptors.add(KEY_ATTRIBUTE_ENCODING);
@@ -306,6 +315,8 @@ public class ConsumeKafka_2_0 extends AbstractProcessor {
         final String securityProtocol = context.getProperty(KafkaProcessorUtils.SECURITY_PROTOCOL).getValue();
         final String bootstrapServers = context.getProperty(KafkaProcessorUtils.BOOTSTRAP_SERVERS).evaluateAttributeExpressions().getValue();
         final boolean honorTransactions = context.getProperty(HONOR_TRANSACTIONS).asBoolean();
+        final KafkaTransactionContextService transactionContextService = context.getProperty(TRANSACTION_CONTEXT_SERVICE).asControllerService(KafkaTransactionContextService.class);
+        final String consumerGroupId = context.getProperty(GROUP_ID).getValue();
         final int commsTimeoutMillis = context.getProperty(COMMS_TIMEOUT).asTimePeriod(TimeUnit.MILLISECONDS).intValue();
         props.put(ConsumerConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, commsTimeoutMillis);
 
@@ -324,11 +335,11 @@ public class ConsumeKafka_2_0 extends AbstractProcessor {
             }
 
             return new ConsumerPool(maxLeases, demarcator, props, topics, maxUncommittedTime, keyEncoding, securityProtocol,
-                bootstrapServers, log, honorTransactions, charset, headerNamePattern);
+                bootstrapServers, log, honorTransactions, transactionContextService, consumerGroupId, charset, headerNamePattern);
         } else if (topicType.equals(TOPIC_PATTERN.getValue())) {
             final Pattern topicPattern = Pattern.compile(topicListing.trim());
             return new ConsumerPool(maxLeases, demarcator, props, topicPattern, maxUncommittedTime, keyEncoding, securityProtocol,
-                bootstrapServers, log, honorTransactions, charset, headerNamePattern);
+                bootstrapServers, log, honorTransactions, transactionContextService, consumerGroupId, charset, headerNamePattern);
         } else {
             getLogger().error("Subscription type has an unknown value {}", new Object[] {topicType});
             return null;

@@ -39,6 +39,8 @@ import org.apache.nifi.serialization.SchemaValidationException;
 import org.apache.nifi.serialization.WriteResult;
 import org.apache.nifi.serialization.record.Record;
 import org.apache.nifi.serialization.record.RecordSchema;
+import org.apache.nifi.services.kafka.KafkaTransactionContext;
+import org.apache.nifi.services.kafka.KafkaTransactionContextService;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.ByteArrayInputStream;
@@ -91,6 +93,8 @@ public abstract class ConsumerLease implements Closeable, ConsumerRebalanceListe
     private long leaseStartNanos = -1;
     private boolean lastPollEmpty = false;
     private int totalMessages = 0;
+    private final KafkaTransactionContextService transactionContextService;
+    private final String consumerGroupId;
 
     ConsumerLease(
             final long maxWaitMillis,
@@ -103,7 +107,9 @@ public abstract class ConsumerLease implements Closeable, ConsumerRebalanceListe
             final RecordSetWriterFactory writerFactory,
             final ComponentLog logger,
             final Charset headerCharacterSet,
-            final Pattern headerNamePattern) {
+            final Pattern headerNamePattern,
+            final KafkaTransactionContextService transactionContextService,
+            final String consumerGroupId) {
         this.maxWaitMillis = maxWaitMillis;
         this.kafkaConsumer = kafkaConsumer;
         this.demarcatorBytes = demarcatorBytes;
@@ -115,6 +121,8 @@ public abstract class ConsumerLease implements Closeable, ConsumerRebalanceListe
         this.logger = logger;
         this.headerCharacterSet = headerCharacterSet;
         this.headerNamePattern = headerNamePattern;
+        this.transactionContextService = transactionContextService;
+        this.consumerGroupId = consumerGroupId;
     }
 
     /**
@@ -214,7 +222,10 @@ public abstract class ConsumerLease implements Closeable, ConsumerRebalanceListe
             getProcessSession().commit();
 
             final Map<TopicPartition, OffsetAndMetadata> offsetsMap = uncommittedOffsetsMap;
-            kafkaConsumer.commitSync(offsetsMap);
+
+            if (transactionContextService == null) {
+                kafkaConsumer.commitSync(offsetsMap);
+            }
             resetInternalState();
             return true;
         } catch (final IOException ioe) {
@@ -407,6 +418,10 @@ public abstract class ConsumerLease implements Closeable, ConsumerRebalanceListe
         tracker.updateFlowFile(flowFile);
         populateAttributes(tracker);
         session.transfer(tracker.flowFile, REL_SUCCESS);
+
+        if (transactionContextService != null) {
+            transactionContextService.addTransactionContext(flowFile.getAttribute("uuid"), new KafkaTransactionContext(consumerGroupId, topicPartition, new OffsetAndMetadata(record.offset() + 1)));
+        }
     }
 
     private void writeDemarcatedData(final ProcessSession session, final List<ConsumerRecord<byte[], byte[]>> records, final TopicPartition topicPartition) {
@@ -631,6 +646,7 @@ public abstract class ConsumerLease implements Closeable, ConsumerRebalanceListe
         }
         kafkaAttrs.put(KafkaProcessorUtils.KAFKA_PARTITION, String.valueOf(tracker.partition));
         kafkaAttrs.put(KafkaProcessorUtils.KAFKA_TOPIC, tracker.topic);
+        kafkaAttrs.put("kafka.consumergroup", consumerGroupId);
         if (tracker.totalRecords > 1) {
             // Add a record.count attribute to remain consistent with other record-oriented processors. If not
             // reading/writing records, then use "kafka.count" attribute.

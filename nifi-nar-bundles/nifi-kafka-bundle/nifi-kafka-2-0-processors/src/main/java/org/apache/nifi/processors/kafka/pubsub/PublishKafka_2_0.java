@@ -17,7 +17,9 @@
 
 package org.apache.nifi.processors.kafka.pubsub;
 
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.AuthorizationException;
 import org.apache.kafka.common.errors.OutOfOrderSequenceException;
 import org.apache.kafka.common.errors.ProducerFencedException;
@@ -43,6 +45,8 @@ import org.apache.nifi.processor.exception.ProcessException;
 import org.apache.nifi.processor.io.InputStreamCallback;
 import org.apache.nifi.processor.util.FlowFileFilters;
 import org.apache.nifi.processor.util.StandardValidators;
+import org.apache.nifi.services.kafka.KafkaTransactionContext;
+import org.apache.nifi.services.kafka.KafkaTransactionContextService;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.BufferedInputStream;
@@ -249,6 +253,13 @@ public class PublishKafka_2_0 extends AbstractProcessor {
         .addValidator(StandardValidators.NON_EMPTY_EL_VALIDATOR)
         .required(false)
         .build();
+    static final PropertyDescriptor TRANSACTION_CONTEXT_SERVICE = new PropertyDescriptor.Builder()
+            .name("transaction-context-service")
+            .displayName("Transaction Context Service")
+            .description("")
+            .identifiesControllerService(KafkaTransactionContextService.class)
+            .required(false)
+            .build();
     static final PropertyDescriptor MESSAGE_HEADER_ENCODING = new PropertyDescriptor.Builder()
         .name("message-header-encoding")
         .displayName("Message Header Encoding")
@@ -281,6 +292,7 @@ public class PublishKafka_2_0 extends AbstractProcessor {
         properties.add(DELIVERY_GUARANTEE);
         properties.add(USE_TRANSACTIONS);
         properties.add(TRANSACTIONAL_ID_PREFIX);
+        properties.add(TRANSACTION_CONTEXT_SERVICE);
         properties.add(ATTRIBUTE_NAME_REGEX);
         properties.add(MESSAGE_HEADER_ENCODING);
         properties.add(KEY);
@@ -413,6 +425,7 @@ public class PublishKafka_2_0 extends AbstractProcessor {
         final String securityProtocol = context.getProperty(KafkaProcessorUtils.SECURITY_PROTOCOL).getValue();
         final String bootstrapServers = context.getProperty(KafkaProcessorUtils.BOOTSTRAP_SERVERS).evaluateAttributeExpressions().getValue();
         final boolean useTransactions = context.getProperty(USE_TRANSACTIONS).asBoolean();
+        final KafkaTransactionContextService transactionContextService = context.getProperty(TRANSACTION_CONTEXT_SERVICE).asControllerService(KafkaTransactionContextService.class);
 
         final long startTime = System.nanoTime();
         try (final PublisherLease lease = pool.obtainPublisher()) {
@@ -420,6 +433,9 @@ public class PublishKafka_2_0 extends AbstractProcessor {
                 if (useTransactions) {
                     lease.beginTransaction();
                 }
+
+                Map<TopicPartition, OffsetAndMetadata> offsets = new HashMap<>();
+                String consumerGroup = "";
 
                 // Send each FlowFile to Kafka asynchronously.
                 for (final FlowFile flowFile : flowFiles) {
@@ -453,8 +469,17 @@ public class PublishKafka_2_0 extends AbstractProcessor {
                             }
                         }
                     });
+
+                    if (transactionContextService != null) {
+                        KafkaTransactionContext transactionContext = transactionContextService.getTransactionContext(flowFile.getAttribute("uuid"));
+                        offsets.put(transactionContext.getTopicPartition(), transactionContext.getOffsetAndMetadata());
+                        consumerGroup = transactionContext.getConsumerGroup();
+                    }
                 }
 
+                if (transactionContextService != null) {
+                    lease.sendConsumerOffsets(offsets, consumerGroup);
+                }
                 // Complete the send
                 final PublishResult publishResult = lease.complete();
 
@@ -463,6 +488,8 @@ public class PublishKafka_2_0 extends AbstractProcessor {
                     session.transfer(flowFiles, REL_FAILURE);
                     return;
                 }
+
+                // TODO: remove from transactionContext
 
                 // Transfer any successful FlowFiles.
                 final long transmissionMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);

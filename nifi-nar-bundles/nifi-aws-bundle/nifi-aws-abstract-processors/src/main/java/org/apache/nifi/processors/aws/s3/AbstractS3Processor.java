@@ -156,6 +156,12 @@ public abstract class AbstractS3Processor extends AbstractAWSCredentialsProvider
         }
 
         initalizeEndpointOverride(context, s3);
+
+        s3.setS3ClientOptions(S3ClientOptions.builder()
+                .disableChunkedEncoding()
+                .setPathStyleAccess(true)
+                .build());
+
         return s3;
     }
 

@@ -40,13 +40,9 @@ import org.apache.nifi.security.krb.KerberosAction;
 import org.apache.nifi.security.krb.KerberosKeytabUser;
 import org.apache.nifi.security.krb.KerberosPasswordUser;
 import org.apache.nifi.security.krb.KerberosUser;
-import org.apache.nifi.util.file.classloader.ClassLoaderUtils;
 
 import javax.security.auth.login.LoginException;
-import java.net.MalformedURLException;
 import java.sql.Connection;
-import java.sql.Driver;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -119,6 +115,7 @@ public class DBCPConnectionPool extends AbstractControllerService implements DBC
         .required(false)
         .addValidator(StandardValidators.createListValidator(true, true, StandardValidators.createURLorFileValidator()))
         .expressionLanguageSupported(ExpressionLanguageScope.VARIABLE_REGISTRY)
+        .dynamicallyModifiesClasspath(true)
         .build();
 
     public static final PropertyDescriptor DB_USER = new PropertyDescriptor.Builder()
@@ -401,9 +398,8 @@ public class DBCPConnectionPool extends AbstractControllerService implements DBC
         dataSource = new BasicDataSource();
         dataSource.setDriverClassName(drv);
 
-        // Optional driver URL, when exist, this URL will be used to locate driver jar file location
-        final String urlString = context.getProperty(DB_DRIVER_LOCATION).evaluateAttributeExpressions().getValue();
-        dataSource.setDriverClassLoader(getDriverClassLoader(urlString, drv));
+        // TODO add comment about removing DriverShim, update tests
+        dataSource.setDriverClassLoader(Thread.currentThread().getContextClassLoader());
 
         final String dburl = context.getProperty(DATABASE_URL).evaluateAttributeExpressions().getValue();
 
@@ -433,43 +429,6 @@ public class DBCPConnectionPool extends AbstractControllerService implements DBC
 
     private Long extractMillisWithInfinite(PropertyValue prop) {
         return "-1".equals(prop.getValue()) ? -1 : prop.asTimePeriod(TimeUnit.MILLISECONDS);
-    }
-
-    /**
-     * using Thread.currentThread().getContextClassLoader(); will ensure that you are using the ClassLoader for you NAR.
-     *
-     * @throws InitializationException
-     *             if there is a problem obtaining the ClassLoader
-     */
-    protected ClassLoader getDriverClassLoader(String locationString, String drvName) throws InitializationException {
-        if (locationString != null && locationString.length() > 0) {
-            try {
-                // Split and trim the entries
-                final ClassLoader classLoader = ClassLoaderUtils.getCustomClassLoader(
-                        locationString,
-                        this.getClass().getClassLoader(),
-                        (dir, name) -> name != null && name.endsWith(".jar")
-                );
-
-                // Workaround which allows to use URLClassLoader for JDBC driver loading.
-                // (Because the DriverManager will refuse to use a driver not loaded by the system ClassLoader.)
-                final Class<?> clazz = Class.forName(drvName, true, classLoader);
-                if (clazz == null) {
-                    throw new InitializationException("Can't load Database Driver " + drvName);
-                }
-                final Driver driver = (Driver) clazz.newInstance();
-                DriverManager.registerDriver(new DriverShim(driver));
-
-                return classLoader;
-            } catch (final MalformedURLException e) {
-                throw new InitializationException("Invalid Database Driver Jar Url", e);
-            } catch (final Exception e) {
-                throw new InitializationException("Can't load Database Driver", e);
-            }
-        } else {
-            // That will ensure that you are using the ClassLoader for you NAR.
-            return Thread.currentThread().getContextClassLoader();
-        }
     }
 
     /**

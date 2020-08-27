@@ -57,6 +57,7 @@ import org.apache.nifi.provenance.ProvenanceRepository;
 import org.apache.nifi.reporting.InitializationException;
 import org.apache.nifi.reporting.ReportingTask;
 import org.apache.nifi.util.StringUtils;
+import org.aspectj.weaver.loadtime.WeavingURLClassLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -397,9 +398,11 @@ public class StandardExtensionDiscoveringManager implements ExtensionDiscovering
                 }
             }
 
-            instanceClassLoader = new InstanceClassLoader(instanceIdentifier, classType, instanceUrls, additionalUrls, narNativeLibDirs, ancestorClassLoader);
+            ClassLoader parent = addWeavingClassloader(additionalUrls, ancestorClassLoader);
+            instanceClassLoader = new InstanceClassLoader(instanceIdentifier, classType, instanceUrls, additionalUrls, narNativeLibDirs, parent);
         } else {
-            instanceClassLoader = new InstanceClassLoader(instanceIdentifier, classType, Collections.emptySet(), additionalUrls, bundleClassLoader);
+            ClassLoader parent = addWeavingClassloader(additionalUrls, bundleClassLoader);
+            instanceClassLoader = new InstanceClassLoader(instanceIdentifier, classType, Collections.emptySet(), additionalUrls, parent);
         }
 
         if (logger.isTraceEnabled()) {
@@ -410,6 +413,14 @@ public class StandardExtensionDiscoveringManager implements ExtensionDiscovering
 
         instanceClassloaderLookup.put(instanceIdentifier, instanceClassLoader);
         return instanceClassLoader;
+    }
+
+    private ClassLoader addWeavingClassloader(Set<URL> additionalUrls, ClassLoader parent) {
+        if (!additionalUrls.isEmpty()) {
+            return new WeavingURLClassLoader(additionalUrls.toArray(new URL[0]), new URL[0], parent);
+        } else {
+            return parent;
+        }
     }
 
     /**

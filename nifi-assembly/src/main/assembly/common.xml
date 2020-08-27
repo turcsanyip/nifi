@@ -49,6 +49,19 @@
             </includes>
         </dependencySet>
 
+        <!-- TODO: comment it -->
+        <dependencySet>
+            <scope>runtime</scope>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>lib/aspectj</outputDirectory>
+            <directoryMode>0770</directoryMode>
+            <fileMode>0664</fileMode>
+            <useTransitiveFiltering>true</useTransitiveFiltering>
+            <includes>
+                <include>org.aspectj:aspectjweaver</include>
+            </includes>
+        </dependencySet>
+
         <!-- Write out the conf directory contents -->
         <dependencySet>
             <scope>runtime</scope>

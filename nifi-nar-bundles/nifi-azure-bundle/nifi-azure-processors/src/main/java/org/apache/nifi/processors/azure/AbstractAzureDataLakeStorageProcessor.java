@@ -25,6 +25,8 @@ import java.util.Set;
 
 import com.azure.core.credential.AccessToken;
 import com.azure.core.credential.TokenCredential;
+import com.azure.identity.ClientCertificateCredential;
+import com.azure.identity.ClientCertificateCredentialBuilder;
 import com.azure.identity.ClientSecretCredential;
 import com.azure.identity.ClientSecretCredentialBuilder;
 import com.azure.identity.ManagedIdentityCredential;
@@ -133,6 +135,8 @@ public abstract class AbstractAzureDataLakeStorageProcessor extends AbstractProc
         final String servicePrincipalTenantId = credentialsDetails.getServicePrincipalTenantId();
         final String servicePrincipalClientId = credentialsDetails.getServicePrincipalClientId();
         final String servicePrincipalClientSecret = credentialsDetails.getServicePrincipalClientSecret();
+        final String servicePrincipalClientCertificatePath = credentialsDetails.getServicePrincipalClientCertificatePath();
+        final String servicePrincipalClientCertificatePassword = credentialsDetails.getServicePrincipalClientCertificatePassword();
 
         final String endpoint = String.format("https://%s.%s", accountName,endpointSuffix);
 
@@ -162,6 +166,17 @@ public abstract class AbstractAzureDataLakeStorageProcessor extends AbstractProc
                     .tenantId(servicePrincipalTenantId)
                     .clientId(servicePrincipalClientId)
                     .clientSecret(servicePrincipalClientSecret)
+                    .build();
+
+            storageClient = new DataLakeServiceClientBuilder()
+                    .endpoint(endpoint)
+                    .credential(credential)
+                    .buildClient();
+        } else if (StringUtils.isNoneBlank(servicePrincipalTenantId, servicePrincipalClientId, servicePrincipalClientCertificatePath, servicePrincipalClientCertificatePassword)) {
+            final ClientCertificateCredential credential = new ClientCertificateCredentialBuilder()
+                    .tenantId(servicePrincipalTenantId)
+                    .clientId(servicePrincipalClientId)
+                    .pfxCertificate(servicePrincipalClientCertificatePath, servicePrincipalClientCertificatePassword)
                     .build();
 
             storageClient = new DataLakeServiceClientBuilder()

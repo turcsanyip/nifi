@@ -32,6 +32,8 @@ public class ADLSCredentialsDetails {
     private final String servicePrincipalTenantId;
     private final String servicePrincipalClientId;
     private final String servicePrincipalClientSecret;
+    private final String servicePrincipalClientCertificatePath;
+    private final String servicePrincipalClientCertificatePassword;
 
     public ADLSCredentialsDetails(
             String accountName,
@@ -42,7 +44,9 @@ public class ADLSCredentialsDetails {
             boolean useManagedIdentity,
             String servicePrincipalTenantId,
             String servicePrincipalClientId,
-            String servicePrincipalClientSecret
+            String servicePrincipalClientSecret,
+            String servicePrincipalClientCertificatePath,
+            String servicePrincipalClientCertificatePassword
     ) {
         this.accountName = accountName;
         this.accountKey = accountKey;
@@ -53,6 +57,8 @@ public class ADLSCredentialsDetails {
         this.servicePrincipalTenantId = servicePrincipalTenantId;
         this.servicePrincipalClientId = servicePrincipalClientId;
         this.servicePrincipalClientSecret = servicePrincipalClientSecret;
+        this.servicePrincipalClientCertificatePath = servicePrincipalClientCertificatePath;
+        this.servicePrincipalClientCertificatePassword = servicePrincipalClientCertificatePassword;
     }
 
     public String getAccountName() {
@@ -91,6 +97,14 @@ public class ADLSCredentialsDetails {
         return servicePrincipalClientSecret;
     }
 
+    public String getServicePrincipalClientCertificatePath() {
+        return servicePrincipalClientCertificatePath;
+    }
+
+    public String getServicePrincipalClientCertificatePassword() {
+        return servicePrincipalClientCertificatePassword;
+    }
+
     public static class Builder {
         private String accountName;
         private String accountKey;
@@ -101,6 +115,8 @@ public class ADLSCredentialsDetails {
         private String servicePrincipalTenantId;
         private String servicePrincipalClientId;
         private String servicePrincipalClientSecret;
+        private String servicePrincipalClientCertificatePath;
+        private String servicePrincipalClientCertificatePassword;
 
         private Builder() {}
 
@@ -153,9 +169,19 @@ public class ADLSCredentialsDetails {
             return this;
         }
 
+        public Builder setServicePrincipalClientCertificatePath(String servicePrincipalClientCertificatePath) {
+            this.servicePrincipalClientCertificatePath = servicePrincipalClientCertificatePath;
+            return this;
+        }
+
+        public Builder setServicePrincipalClientCertificatePassword(String servicePrincipalClientCertificatePassword) {
+            this.servicePrincipalClientCertificatePassword = servicePrincipalClientCertificatePassword;
+            return this;
+        }
+
         public ADLSCredentialsDetails build() {
             return new ADLSCredentialsDetails(accountName, accountKey, sasToken, endpointSuffix, accessToken, useManagedIdentity,
-                    servicePrincipalTenantId, servicePrincipalClientId, servicePrincipalClientSecret);
+                    servicePrincipalTenantId, servicePrincipalClientId, servicePrincipalClientSecret, servicePrincipalClientCertificatePath, servicePrincipalClientCertificatePassword);
         }
     }
 }

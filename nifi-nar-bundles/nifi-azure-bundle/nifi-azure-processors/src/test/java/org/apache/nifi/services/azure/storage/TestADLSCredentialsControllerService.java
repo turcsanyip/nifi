@@ -36,6 +36,8 @@ public class TestADLSCredentialsControllerService {
 
     public static final String CREDENTIALS_SERVICE_IDENTIFIER = "credentials-service";
 
+    private static final String SERVICE_PRINCIPAL_CLIENT_CERTIFICATE_BASE_DIR = "src/test/resources/adls/service-principal/";
+
     private static final String ACCOUNT_NAME_VALUE = "AccountName";
     private static final String ACCOUNT_KEY_VALUE = "AccountKey";
     private static final String SAS_TOKEN_VALUE = "SasToken";
@@ -43,6 +45,8 @@ public class TestADLSCredentialsControllerService {
     private static final String SERVICE_PRINCIPAL_TENANT_ID_VALUE = "ServicePrincipalTenantID";
     private static final String SERVICE_PRINCIPAL_CLIENT_ID_VALUE = "ServicePrincipalClientID";
     private static final String SERVICE_PRINCIPAL_CLIENT_SECRET_VALUE = "ServicePrincipalClientSecret";
+    private static final String SERVICE_PRINCIPAL_CLIENT_CERTIFICATE_PATH_VALUE = SERVICE_PRINCIPAL_CLIENT_CERTIFICATE_BASE_DIR + "client-certificate.pfx";
+    private static final String SERVICE_PRINCIPAL_CLIENT_CERTIFICATE_PASSWORD_VALUE = "password";
 
     private TestRunner runner;
     private ADLSCredentialsControllerService credentialsService;
@@ -119,6 +123,26 @@ public class TestADLSCredentialsControllerService {
     }
 
     @Test
+    public void testNotValidBecauseBothAccountKeyAndServicePrincipalClientCertificatePathSpecified() {
+        configureAccountName();
+
+        configureAccountKey();
+        configureServicePrincipalClientCertificatePath();
+
+        runner.assertNotValid(credentialsService);
+    }
+
+    @Test
+    public void testNotValidBecauseBothAccountKeyAndServicePrincipalClientCertificatePasswordSpecified() {
+        configureAccountName();
+
+        configureAccountKey();
+        configureServicePrincipalClientCertificatePassword();
+
+        runner.assertNotValid(credentialsService);
+    }
+
+    @Test
     public void testNotValidBecauseBothSasTokenAndUseManagedIdentitySpecified() {
         configureAccountName();
 
@@ -159,6 +183,26 @@ public class TestADLSCredentialsControllerService {
     }
 
     @Test
+    public void testNotValidBecauseBothSasTokenAndServicePrincipalClientCertificatePathSpecified() {
+        configureAccountName();
+
+        configureSasToken();
+        configureServicePrincipalClientCertificatePath();
+
+        runner.assertNotValid(credentialsService);
+    }
+
+    @Test
+    public void testNotValidBecauseBothSasTokenAndServicePrincipalClientCertificatePasswordSpecified() {
+        configureAccountName();
+
+        configureSasToken();
+        configureServicePrincipalClientCertificatePassword();
+
+        runner.assertNotValid(credentialsService);
+    }
+
+    @Test
     public void testNotValidBecauseBothUseManagedIdentityAndServicePrincipalTenantIdSpecified() {
         configureAccountName();
 
@@ -189,7 +233,27 @@ public class TestADLSCredentialsControllerService {
     }
 
     @Test
-    public void testNotValidBecauseAllCredentialsSpecified() throws Exception {
+    public void testNotValidBecauseBothUseManagedIdentityAndServicePrincipalClientCertificatePathSpecified() {
+        configureAccountName();
+
+        configureUseManagedIdentity();
+        configureServicePrincipalClientCertificatePath();
+
+        runner.assertNotValid(credentialsService);
+    }
+
+    @Test
+    public void testNotValidBecauseBothUseManagedIdentityAndServicePrincipalClientCertificatePasswordSpecified() {
+        configureAccountName();
+
+        configureUseManagedIdentity();
+        configureServicePrincipalClientCertificatePassword();
+
+        runner.assertNotValid(credentialsService);
+    }
+
+    @Test
+    public void testNotValidBecauseAllCredentialsSpecified() {
         configureAccountName();
 
         configureAccountKey();
@@ -198,6 +262,8 @@ public class TestADLSCredentialsControllerService {
         configureServicePrincipalTenantId();
         configureServicePrincipalClientId();
         configureServicePrincipalClientSecret();
+        configureServicePrincipalClientCertificatePath();
+        configureServicePrincipalClientCertificatePassword();
 
         runner.assertNotValid(credentialsService);
     }
@@ -254,6 +320,17 @@ public class TestADLSCredentialsControllerService {
     }
 
     @Test
+    public void testValidWithAccountNameAndServicePrincipalWithClientCertificate() throws Exception {
+        configureAccountName();
+        configureServicePrincipalTenantId();
+        configureServicePrincipalClientId();
+        configureServicePrincipalClientCertificatePath();
+        configureServicePrincipalClientCertificatePassword();
+
+        runner.assertValid(credentialsService);
+    }
+
+    @Test
     public void testNotValidBecauseNoTenantIdSpecifiedForServicePrincipal() {
         configureAccountName();
 
@@ -274,11 +351,129 @@ public class TestADLSCredentialsControllerService {
     }
 
     @Test
-    public void testNotValidBecauseNoClientSecretSpecifiedForServicePrincipal() {
+    public void testNotValidBecauseNeitherClientSecretNorClientCertificateSpecifiedForServicePrincipal() {
         configureAccountName();
 
         configureServicePrincipalTenantId();
         configureServicePrincipalClientId();
+
+        runner.assertNotValid(credentialsService);
+    }
+
+    @Test
+    public void testNotValidBecauseBothClientSecretAndClientCertificatePathSpecifiedForServicePrincipal() {
+        configureAccountName();
+
+        configureServicePrincipalTenantId();
+        configureServicePrincipalClientId();
+        configureServicePrincipalClientSecret();
+        configureServicePrincipalClientCertificatePath();
+
+        runner.assertNotValid(credentialsService);
+    }
+
+    @Test
+    public void testNotValidBecauseBothClientSecretAndClientCertificatePasswordSpecifiedForServicePrincipal() {
+        configureAccountName();
+
+        configureServicePrincipalTenantId();
+        configureServicePrincipalClientId();
+        configureServicePrincipalClientSecret();
+        configureServicePrincipalClientCertificatePassword();
+
+        runner.assertNotValid(credentialsService);
+    }
+
+    @Test
+    public void testNotValidBecauseNoClientCertificatePathSpecifiedForServicePrincipalClientCertificate() {
+        configureAccountName();
+
+        configureServicePrincipalTenantId();
+        configureServicePrincipalClientId();
+        configureServicePrincipalClientCertificatePassword();
+
+        runner.assertNotValid(credentialsService);
+    }
+
+    @Test
+    public void testNotValidBecauseNoClientCertificatePasswordSpecifiedForServicePrincipalClientCertificate() {
+        configureAccountName();
+
+        configureServicePrincipalTenantId();
+        configureServicePrincipalClientId();
+        configureServicePrincipalClientCertificatePath();
+
+        runner.assertNotValid(credentialsService);
+    }
+
+    @Test
+    public void testNotValidBecauseServicePrincipalClientCertificatePathDoesNotExist() {
+        configureAccountName();
+
+        configureServicePrincipalTenantId();
+        configureServicePrincipalClientId();
+        configureServicePrincipalClientCertificatePath(SERVICE_PRINCIPAL_CLIENT_CERTIFICATE_BASE_DIR + "dummy.pfx");
+        configureServicePrincipalClientCertificatePassword();
+
+        runner.assertNotValid(credentialsService);
+    }
+
+    @Test
+    public void testNotValidBecauseServicePrincipalClientCertificatePathIsNotAFile() {
+        configureAccountName();
+
+        configureServicePrincipalTenantId();
+        configureServicePrincipalClientId();
+        configureServicePrincipalClientCertificatePath(SERVICE_PRINCIPAL_CLIENT_CERTIFICATE_BASE_DIR);
+        configureServicePrincipalClientCertificatePassword();
+
+        runner.assertNotValid(credentialsService);
+    }
+
+    @Test
+    public void testNotValidBecauseServicePrincipalClientCertificatePasswordIsWrong() {
+        configureAccountName();
+
+        configureServicePrincipalTenantId();
+        configureServicePrincipalClientId();
+        configureServicePrincipalClientCertificatePath();
+        configureServicePrincipalClientCertificatePassword("wrong-password");
+
+        runner.assertNotValid(credentialsService);
+    }
+
+    @Test
+    public void testNotValidBecauseServicePrincipalClientCertificateKeyNotFound() {
+        configureAccountName();
+
+        configureServicePrincipalTenantId();
+        configureServicePrincipalClientId();
+        configureServicePrincipalClientCertificatePath(SERVICE_PRINCIPAL_CLIENT_CERTIFICATE_BASE_DIR + "client-certificate-no-key.jks");
+        configureServicePrincipalClientCertificatePassword();
+
+        runner.assertNotValid(credentialsService);
+    }
+
+    @Test
+    public void testNotValidBecauseServicePrincipalClientCertificateKeyPasswordIsDifferent() {
+        configureAccountName();
+
+        configureServicePrincipalTenantId();
+        configureServicePrincipalClientId();
+        configureServicePrincipalClientCertificatePath(SERVICE_PRINCIPAL_CLIENT_CERTIFICATE_BASE_DIR + "client-certificate-diff-key-pass.jks");
+        configureServicePrincipalClientCertificatePassword();
+
+        runner.assertNotValid(credentialsService);
+    }
+
+    @Test
+    public void testNotValidBecauseServicePrincipalClientCertificateKeystoreIsJKS() {
+        configureAccountName();
+
+        configureServicePrincipalTenantId();
+        configureServicePrincipalClientId();
+        configureServicePrincipalClientCertificatePath(SERVICE_PRINCIPAL_CLIENT_CERTIFICATE_BASE_DIR + "client-certificate.jks");
+        configureServicePrincipalClientCertificatePassword();
 
         runner.assertNotValid(credentialsService);
     }
@@ -303,6 +498,8 @@ public class TestADLSCredentialsControllerService {
         assertNull(actual.getServicePrincipalTenantId());
         assertNull(actual.getServicePrincipalClientId());
         assertNull(actual.getServicePrincipalClientSecret());
+        assertNull(actual.getServicePrincipalClientCertificatePath());
+        assertNull(actual.getServicePrincipalClientCertificatePassword());
     }
 
     @Test
@@ -325,6 +522,8 @@ public class TestADLSCredentialsControllerService {
         assertNull(actual.getServicePrincipalTenantId());
         assertNull(actual.getServicePrincipalClientId());
         assertNull(actual.getServicePrincipalClientSecret());
+        assertNull(actual.getServicePrincipalClientCertificatePath());
+        assertNull(actual.getServicePrincipalClientCertificatePassword());
     }
 
     @Test
@@ -347,10 +546,12 @@ public class TestADLSCredentialsControllerService {
         assertNull(actual.getServicePrincipalTenantId());
         assertNull(actual.getServicePrincipalClientId());
         assertNull(actual.getServicePrincipalClientSecret());
+        assertNull(actual.getServicePrincipalClientCertificatePath());
+        assertNull(actual.getServicePrincipalClientCertificatePassword());
     }
 
     @Test
-    public void testGetCredentialsDetailsWithServicePrincipalWithClientSecret() throws Exception {
+    public void testGetCredentialsDetailsWithServicePrincipalWithClientSecret() {
         // GIVEN
         configureAccountName();
         configureServicePrincipalTenantId();
@@ -371,6 +572,52 @@ public class TestADLSCredentialsControllerService {
         assertEquals(SERVICE_PRINCIPAL_TENANT_ID_VALUE, actual.getServicePrincipalTenantId());
         assertEquals(SERVICE_PRINCIPAL_CLIENT_ID_VALUE, actual.getServicePrincipalClientId());
         assertEquals(SERVICE_PRINCIPAL_CLIENT_SECRET_VALUE, actual.getServicePrincipalClientSecret());
+        assertNull(actual.getServicePrincipalClientCertificatePath());
+        assertNull(actual.getServicePrincipalClientCertificatePassword());
+    }
+
+    @Test
+    public void testGetCredentialsDetailsWithServicePrincipalWithClientCertificate() {
+        // GIVEN
+        configureAccountName();
+        configureServicePrincipalTenantId();
+        configureServicePrincipalClientId();
+        configureServicePrincipalClientCertificatePath();
+        configureServicePrincipalClientCertificatePassword();
+
+        executeTestGetCredentialsDetailsWithServicePrincipalWithClientCertificate();
+    }
+
+    @Test
+    public void testGetCredentialsDetailsWithServicePrincipalWithClientCertificateUsingEL() {
+        // GIVEN
+        configureAccountName();
+        configureServicePrincipalTenantId();
+        configureServicePrincipalClientId();
+        configureServicePrincipalClientCertificatePathUsingEL();
+        configureServicePrincipalClientCertificatePassword();
+
+        executeTestGetCredentialsDetailsWithServicePrincipalWithClientCertificate();
+    }
+
+    private void executeTestGetCredentialsDetailsWithServicePrincipalWithClientCertificate() {
+        // GIVEN
+        runner.enableControllerService(credentialsService);
+
+        // WHEN
+        ADLSCredentialsDetails actual = credentialsService.getCredentialsDetails(new HashMap<>());
+
+        // THEN
+        assertEquals(ACCOUNT_NAME_VALUE, actual.getAccountName());
+        assertNull(actual.getAccountKey());
+        assertNull(actual.getSasToken());
+        assertFalse(actual.getUseManagedIdentity());
+        assertNotNull(actual.getEndpointSuffix());
+        assertEquals(SERVICE_PRINCIPAL_TENANT_ID_VALUE, actual.getServicePrincipalTenantId());
+        assertEquals(SERVICE_PRINCIPAL_CLIENT_ID_VALUE, actual.getServicePrincipalClientId());
+        assertNull(actual.getServicePrincipalClientSecret());
+        assertEquals(SERVICE_PRINCIPAL_CLIENT_CERTIFICATE_PATH_VALUE, actual.getServicePrincipalClientCertificatePath());
+        assertEquals(SERVICE_PRINCIPAL_CLIENT_CERTIFICATE_PASSWORD_VALUE, actual.getServicePrincipalClientCertificatePassword());
     }
 
     @Test
@@ -440,6 +687,27 @@ public class TestADLSCredentialsControllerService {
 
     private void configureServicePrincipalClientSecret() {
         runner.setProperty(credentialsService, ADLSCredentialsControllerService.SERVICE_PRINCIPAL_CLIENT_SECRET, SERVICE_PRINCIPAL_CLIENT_SECRET_VALUE);
+    }
+
+    private void configureServicePrincipalClientCertificatePath() {
+        configureServicePrincipalClientCertificatePath(SERVICE_PRINCIPAL_CLIENT_CERTIFICATE_PATH_VALUE);
+    }
+
+    private void configureServicePrincipalClientCertificatePath(String path) {
+        runner.setProperty(credentialsService, ADLSCredentialsControllerService.SERVICE_PRINCIPAL_CLIENT_CERTIFICATE_PATH, path);
+    }
+
+    private void configureServicePrincipalClientCertificatePathUsingEL() {
+        String variableName = "service.principal.client.certificate.path";
+        configurePropertyUsingEL(ADLSCredentialsControllerService.SERVICE_PRINCIPAL_CLIENT_CERTIFICATE_PATH, variableName, SERVICE_PRINCIPAL_CLIENT_CERTIFICATE_PATH_VALUE);
+    }
+
+    private void configureServicePrincipalClientCertificatePassword() {
+        configureServicePrincipalClientCertificatePassword(SERVICE_PRINCIPAL_CLIENT_CERTIFICATE_PASSWORD_VALUE);
+    }
+
+    private void configureServicePrincipalClientCertificatePassword(String password) {
+        runner.setProperty(credentialsService, ADLSCredentialsControllerService.SERVICE_PRINCIPAL_CLIENT_CERTIFICATE_PASSWORD, password);
     }
 
     private void configurePropertyUsingEL(PropertyDescriptor propertyDescriptor, String variableName, String variableValue) {

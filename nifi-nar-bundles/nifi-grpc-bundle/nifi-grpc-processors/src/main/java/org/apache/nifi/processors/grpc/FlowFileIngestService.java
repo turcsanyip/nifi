@@ -18,7 +18,7 @@ package org.apache.nifi.processors.grpc;
 
 import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
-
+import io.grpc.stub.StreamObserver;
 import org.apache.commons.io.IOUtils;
 import org.apache.nifi.flowfile.FlowFile;
 import org.apache.nifi.flowfile.attributes.CoreAttributes;
@@ -26,17 +26,14 @@ import org.apache.nifi.logging.ComponentLog;
 import org.apache.nifi.processor.ProcessContext;
 import org.apache.nifi.processor.ProcessSession;
 import org.apache.nifi.processor.ProcessSessionFactory;
+import org.apache.nifi.processors.grpc.util.BackpressureChecker;
 
 import java.io.BufferedOutputStream;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-
-import io.grpc.stub.StreamObserver;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -54,11 +51,10 @@ public class FlowFileIngestService extends FlowFileServiceGrpc.FlowFileServiceIm
     public static final String SERVICE_NAME = "grpc://FlowFileIngestService";
     public static final int FILES_BEFORE_CHECKING_DESTINATION_SPACE = 5;
 
-    private final AtomicLong filesReceived = new AtomicLong(0L);
-    private final AtomicBoolean spaceAvailable = new AtomicBoolean(true);
     private final AtomicReference<ProcessSessionFactory> sessionFactoryReference;
     private final ProcessContext context;
     private final ComponentLog logger;
+    private final BackpressureChecker backpressureChecker;
 
     /**
      * Create a FlowFileIngestService
@@ -68,10 +64,12 @@ public class FlowFileIngestService extends FlowFileServiceGrpc.FlowFileServiceIm
      */
     public FlowFileIngestService(final ComponentLog logger,
                                  final AtomicReference<ProcessSessionFactory> sessionFactoryReference,
-                                 final ProcessContext context) {
+                                 final ProcessContext context,
+                                 final BackpressureChecker backpressureChecker) {
         this.context = checkNotNull(context);
         this.sessionFactoryReference = checkNotNull(sessionFactoryReference);
         this.logger = checkNotNull(logger);
+        this.backpressureChecker = checkNotNull(backpressureChecker);
     }
 
     /**
@@ -102,23 +100,17 @@ public class FlowFileIngestService extends FlowFileServiceGrpc.FlowFileServiceIm
         final ProcessSession session = sessionFactory.createSession();
 
         // if there's no space available, reject the request.
-        final long n = filesReceived.getAndIncrement() % FILES_BEFORE_CHECKING_DESTINATION_SPACE;
-        if (n == 0 || !spaceAvailable.get()) {
-            if (context.getAvailableRelationships().isEmpty()) {
-                spaceAvailable.set(false);
-                final String message = "Received request from " + remoteHost + " but no space available; Indicating Service Unavailable";
-                if (logger.isDebugEnabled()) {
-                    logger.debug(message);
-                }
-                final FlowFileReply reply = replyBuilder.setResponseCode(FlowFileReply.ResponseCode.ERROR)
-                        .setBody(message)
-                        .build();
-                responseObserver.onNext(reply);
-                responseObserver.onCompleted();
-                return;
-            } else {
-                spaceAvailable.set(true);
+        if (backpressureChecker.isBackpressure()) {
+            final String message = "Received request from " + remoteHost + " but no space available; Indicating Service Unavailable";
+            if (logger.isDebugEnabled()) {
+                logger.debug(message);
             }
+            final FlowFileReply reply = replyBuilder.setResponseCode(FlowFileReply.ResponseCode.ERROR)
+                    .setBody(message)
+                    .build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+            return;
         }
 
         if (logger.isDebugEnabled()) {

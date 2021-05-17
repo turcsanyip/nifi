@@ -49,9 +49,14 @@ language governing permissions and limitations under the License. -->
             <artifactId>commons-io</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-netty</artifactId>
-            <version>${grpc.version}</version>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>${protobuf.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java-util</artifactId>
+            <version>${protobuf.version}</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
@@ -62,6 +67,16 @@ language governing permissions and limitations under the License. -->
             <groupId>io.grpc</groupId>
             <artifactId>grpc-stub</artifactId>
             <version>${grpc.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-netty</artifactId>
+            <version>${grpc.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>cglib</groupId>
+            <artifactId>cglib</artifactId>
+            <version>3.3.0</version>
         </dependency>
         <dependency>
             <groupId>javax.annotation</groupId>
@@ -84,8 +99,69 @@ language governing permissions and limitations under the License. -->
             <version>2.0.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
+        <!-- protoc executables used by org.apache.nifi.processors.grpc.compiler.ProtoCompiler -->
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protoc</artifactId>
+            <version>${protobuf.version}</version>
+            <type>exe</type>
+            <classifier>linux-x86_64</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protoc</artifactId>
+            <version>${protobuf.version}</version>
+            <type>exe</type>
+            <classifier>osx-x86_64</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protoc</artifactId>
+            <version>${protobuf.version}</version>
+            <type>exe</type>
+            <classifier>windows-x86_64</classifier>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>protoc-gen-grpc-java</artifactId>
+            <version>${grpc.version}</version>
+            <type>exe</type>
+            <classifier>linux-x86_64</classifier>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>protoc-gen-grpc-java</artifactId>
+            <version>${grpc.version}</version>
+            <type>exe</type>
+            <classifier>osx-x86_64</classifier>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>protoc-gen-grpc-java</artifactId>
+            <version>${grpc.version}</version>
+            <type>exe</type>
+            <classifier>windows-x86_64</classifier>
+        </dependency>
     </dependencies>
+
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>proto.properties</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                    <exclude>proto.properties</exclude>
+                </excludes>
+            </resource>
+        </resources>
+
         <extensions>
             <extension>
                 <groupId>kr.motd.maven</groupId>
@@ -107,7 +183,7 @@ language governing permissions and limitations under the License. -->
                 <artifactId>protobuf-maven-plugin</artifactId>
                 <version>0.6.1</version>
                 <configuration>
-                    <protocArtifact>com.google.protobuf:protoc:${protoc.version}:exe:${os.detected.classifier}</protocArtifact>
+                    <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
                     <pluginId>grpc-java</pluginId>
                     <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
                     <protoSourceRoot>${basedir}/src/main/resources/proto</protoSourceRoot>

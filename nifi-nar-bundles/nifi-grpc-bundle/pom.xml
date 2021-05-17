@@ -32,8 +32,8 @@
     </modules>
 
     <properties>
-        <grpc.version>1.52.1</grpc.version>
-        <protoc.version>3.21.4</protoc.version>
+        <grpc.version>1.53.0</grpc.version>
+        <protobuf.version>3.22.2</protobuf.version>
     </properties>
 
     <dependencyManagement>

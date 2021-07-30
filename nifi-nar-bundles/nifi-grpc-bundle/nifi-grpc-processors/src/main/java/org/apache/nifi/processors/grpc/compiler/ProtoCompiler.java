@@ -58,6 +58,7 @@ public class ProtoCompiler {
     }
 
     private static final String OS_ARCH_X86_64 = "x86_64";
+    private static final String OS_ARCH_AMD64 = "amd64";
 
     private static final String PROTOC_EXE_TEMPLATE = "protoc-%s-%s-x86_64.exe";
     private static final String PROTOC_GRPC_EXE_TEMPLATE = "protoc-gen-grpc-java-%s-%s-x86_64.exe";
@@ -96,8 +97,9 @@ public class ProtoCompiler {
             throw new ProtoException("Only Linux, Mac OSX and Windows are supported");
         }
 
-        if (!OS_ARCH_X86_64.equals(System.getProperty("os.arch"))) {
-            throw new ProtoException("Only x86-64 architectures are supported");
+        String osArch = System.getProperty("os.arch");
+        if (!(OS_ARCH_X86_64.equals(osArch) || OS_ARCH_AMD64.equals(osArch))) {
+            throw new ProtoException("Only x86-64/AMD64 architectures are supported. Current os.arch: " + osArch);
         }
 
         ProtoProperties protoProperties = new ProtoProperties();

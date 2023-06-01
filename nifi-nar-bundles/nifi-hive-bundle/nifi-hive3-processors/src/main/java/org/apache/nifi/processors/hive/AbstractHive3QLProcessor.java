@@ -286,7 +286,7 @@ public abstract class AbstractHive3QLProcessor extends AbstractSessionFactoryPro
             node = new ParseDriver().parse(normalize(query));
         } catch (ParseException e) {
             // If failed to parse the query, just log a message, but continue.
-            getLogger().debug("Failed to parse query: {} due to {}", new Object[]{query, e}, e);
+            getLogger().debug("Failed to parse query: {} due to {}", query, e, e);
             return Collections.emptySet();
         }
         final HashSet<TableName> tableNames = new HashSet<>();

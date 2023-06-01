@@ -225,7 +225,7 @@ public abstract class AbstractHive3QLProcessor extends AbstractSessionFactoryPro
                 }
             } catch (SQLException e) {
                 // Log which attribute/parameter had an error, then rethrow to be handled at the top level
-                getLogger().error("Error setting parameter {} to value from {} ({})", new Object[]{parameterIndex, attrName, parameterValue}, e);
+                getLogger().error("Error setting parameter {} to value from {} ({})", parameterIndex, attrName, parameterValue, e);
                 throw e;
             }
         }

@@ -251,7 +251,7 @@ public class PublishGCPubSub extends AbstractGCPubSubWithProxyProcessor {
                 } catch (InterruptedException | ExecutionException e) {
                     if (e.getCause() instanceof DeadlineExceededException) {
                         getLogger().error("Failed to publish the message to Google Cloud PubSub topic '{}' due to {} but attempting again may succeed " +
-                                        "so routing to retry", new Object[]{topicName, e.getLocalizedMessage()}, e);
+                                        "so routing to retry", topicName, e.getLocalizedMessage(), e);
                         session.transfer(flowFile, REL_RETRY);
                     } else {
                         getLogger().error("Failed to publish the message to Google Cloud PubSub topic '{}'", topicName, e);

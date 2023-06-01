@@ -276,14 +276,13 @@ public class PutHive3QL extends AbstractHive3QLProcessor {
         onFlowFileError = onFlowFileError.andThen((c, i, r, e) -> {
             switch (r.destination()) {
                 case Failure:
-                    getLogger().error("Failed to update Hive for {} due to {}; routing to failure", new Object[] {i, e}, e);
+                    getLogger().error("Failed to update Hive for {} due to {}; routing to failure", i, e, e);
                     break;
                 case Retry:
-                    getLogger().error("Failed to update Hive for {} due to {}; it is possible that retrying the operation will succeed, so routing to retry",
-                            new Object[] {i, e}, e);
+                    getLogger().error("Failed to update Hive for {} due to {}; it is possible that retrying the operation will succeed, so routing to retry", i, e, e);
                     break;
                 case Self:
-                    getLogger().error("Failed to update Hive for {} due to {};", new Object[] {i, e}, e);
+                    getLogger().error("Failed to update Hive for {} due to {};", i, e, e);
                     break;
             }
         });

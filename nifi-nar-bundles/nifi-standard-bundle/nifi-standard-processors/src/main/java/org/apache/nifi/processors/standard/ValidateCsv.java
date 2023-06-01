@@ -546,7 +546,7 @@ public class ValidateCsv extends AbstractProcessor {
 
                 } catch (final IOException e) {
                     valid.set(false);
-                    logger.error("Failed to validate {} against schema due to {}", new Object[]{flowFile}, e);
+                    logger.error("Failed to validate {} against schema due to {}", flowFile, e);
                 }
             }
         });

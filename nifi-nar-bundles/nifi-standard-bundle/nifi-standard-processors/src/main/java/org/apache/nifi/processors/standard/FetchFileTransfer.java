@@ -275,7 +275,7 @@ public abstract class FetchFileTransfer extends AbstractProcessor {
                 return;
             } catch (final ProcessException | IOException e) {
                 getLogger().error("Failed to fetch content for {} from filename {} on remote host {}:{} due to {}; routing to comms.failure",
-                        new Object[]{flowFile, filename, host, port, e.toString()}, e);
+                        flowFile, filename, host, port, e.toString(), e);
                 session.transfer(session.penalize(flowFile), REL_COMMS_FAILURE);
                 cleanupTransfer(transfer, true, transferQueue, host, port);
                 return;

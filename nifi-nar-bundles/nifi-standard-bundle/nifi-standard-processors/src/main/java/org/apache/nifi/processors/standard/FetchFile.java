@@ -242,7 +242,7 @@ public class FetchFile extends AbstractProcessor {
                     } catch (Exception e) {
                         getLogger().error("Could not fetch file {} from file system for {} because Completion Strategy is configured to move the original file to {}, "
                                         + "but that directory does not exist and could not be created due to: {}",
-                                new Object[] {file, flowFile, targetDir, e.getMessage()}, e);
+                                file, flowFile, targetDir, e.getMessage(), e);
                         session.transfer(flowFile, REL_FAILURE);
                         return;
                     }
@@ -267,7 +267,7 @@ public class FetchFile extends AbstractProcessor {
         try (final FileInputStream fis = new FileInputStream(file)) {
             flowFile = session.importFrom(fis, flowFile);
         } catch (final IOException ioe) {
-            getLogger().error("Could not fetch file {} from file system for {} due to {}; routing to failure", new Object[] {file, flowFile, ioe.toString()}, ioe);
+            getLogger().error("Could not fetch file {} from file system for {} due to {}; routing to failure", file, flowFile, ioe.toString(), ioe);
             session.transfer(session.penalize(flowFile), REL_FAILURE);
             return;
         }

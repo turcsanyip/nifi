@@ -416,7 +416,7 @@ public class ListGCSBucket extends AbstractGCSProcessor {
         try {
             listBucket(context, listingAction);
         } catch (final Exception e) {
-            getLogger().error("Failed to list contents of GCS Bucket due to {}", new Object[] {e}, e);
+            getLogger().error("Failed to list contents of GCS Bucket due to {}", e, e);
             listingAction.getBlobWriter().finishListingExceptionally(e);
             session.rollback();
             context.yield();
@@ -645,7 +645,7 @@ public class ListGCSBucket extends AbstractGCSProcessor {
 
                 writer.finishListing();
             } catch (final Exception e) {
-                getLogger().error("Failed to list contents of bucket due to {}", new Object[] {e}, e);
+                getLogger().error("Failed to list contents of bucket due to {}", e, e);
                 writer.finishListingExceptionally(e);
                 session.rollback();
                 context.yield();
@@ -827,7 +827,7 @@ public class ListGCSBucket extends AbstractGCSProcessor {
             try {
                 recordWriter.close();
             } catch (IOException e) {
-                logger.error("Failed to write listing as Records due to {}", new Object[] {e}, e);
+                logger.error("Failed to write listing as Records due to {}", e, e);
             }
 
             session.remove(flowFile);

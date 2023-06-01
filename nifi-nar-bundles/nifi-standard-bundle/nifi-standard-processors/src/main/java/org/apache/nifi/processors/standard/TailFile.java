@@ -983,11 +983,11 @@ public class TailFile extends AbstractProcessor {
             try {
                 reader.position(newPosition);
             } catch (IOException ex) {
-                getLogger().warn("Couldn't reposition the reader for {} due to {}", new Object[]{ file, ex }, ex);
+                getLogger().warn("Couldn't reposition the reader for {} due to {}", file, ex, ex);
                 try {
                     reader.close();
                 } catch (IOException ex2) {
-                    getLogger().warn("Failed to close reader for {} due to {}", new Object[]{ file, ex2 }, ex2);
+                    getLogger().warn("Failed to close reader for {} due to {}", file, ex2, ex2);
                 }
             }
 

@@ -328,7 +328,7 @@ public class FetchFile extends AbstractProcessor {
         // Handle completion failures
         if (completionFailureException != null) {
             getLogger().warn("Successfully fetched the content from {} for {} but failed to perform Completion Action due to {}; routing to success",
-                new Object[] {file, flowFile, completionFailureException}, completionFailureException);
+                    file, flowFile, completionFailureException, completionFailureException);
         }
     }
 

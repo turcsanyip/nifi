@@ -248,7 +248,7 @@ public class PutHive3QL extends AbstractHive3QLProcessor {
                             tableNames.addAll(findTableNames(hiveQL));
                         } catch (Exception e) {
                             // If failed to parse the query, just log a warning message, but continue.
-                            getLogger().warn("Failed to parse hiveQL: {} due to {}", new Object[]{hiveQL, e}, e);
+                            getLogger().warn("Failed to parse hiveQL: {} due to {}", hiveQL, e, e);
                         }
 
                         stmt.setQueryTimeout(context.getProperty(QUERY_TIMEOUT).evaluateAttributeExpressions(flowFile).asInteger());

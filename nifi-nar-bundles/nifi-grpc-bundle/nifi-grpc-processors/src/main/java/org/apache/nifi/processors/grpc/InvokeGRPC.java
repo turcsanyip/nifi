@@ -245,7 +245,7 @@ public class InvokeGRPC extends AbstractProcessor {
         try {
             userAgent += "_" + InetAddress.getLocalHost().getHostName();
         } catch (final UnknownHostException e) {
-            logger.warn("Unable to determine local hostname. Defaulting gRPC user agent to {}.", new Object[]{USER_AGENT_PREFIX}, e);
+            logger.warn("Unable to determine local hostname. Defaulting gRPC user agent to {}.", USER_AGENT_PREFIX, e);
         }
 
         final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder.forAddress(host, port)

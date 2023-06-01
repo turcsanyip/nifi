@@ -451,7 +451,7 @@ public class UpdateDatabaseTable extends AbstractProcessor {
             session.transfer(flowFile, REL_FAILURE);
         } catch (DiscontinuedException e) {
             // The input FlowFile processing is discontinued. Keep it in the input queue.
-            getLogger().warn("Discontinued processing for {} due to {}", new Object[]{flowFile, e}, e);
+            getLogger().warn("Discontinued processing for {} due to {}", flowFile, e, e);
             session.transfer(flowFile, Relationship.SELF);
         } catch (Throwable t) {
             throw (t instanceof ProcessException) ? (ProcessException) t : new ProcessException(t);

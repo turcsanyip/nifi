@@ -457,7 +457,7 @@ public class SelectHive3QL extends AbstractHive3QLProcessor {
                             attributes.putAll(toQueryTableAttributes(findTableNames(hqlStatement)));
                         } catch (Exception e) {
                             // If failed to parse the query, just log a warning message, but continue.
-                            getLogger().warn("Failed to parse query: {} due to {}", new Object[]{hqlStatement, e}, e);
+                            getLogger().warn("Failed to parse query: {} due to {}", hqlStatement, e, e);
                         }
 
                         // Set MIME type on output document and add extension to filename

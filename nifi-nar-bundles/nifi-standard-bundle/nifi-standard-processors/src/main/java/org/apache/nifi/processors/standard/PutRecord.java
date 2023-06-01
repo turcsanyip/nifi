@@ -163,7 +163,7 @@ public class PutRecord extends AbstractProcessor {
             }
 
         } catch (RetryableIOException rioe) {
-            getLogger().warn("Error during transmission of records due to {}, routing to retry", new Object[]{rioe.getMessage()}, rioe);
+            getLogger().warn("Error during transmission of records due to {}, routing to retry", rioe.getMessage(), rioe);
             session.transfer(flowFile, REL_RETRY);
             return;
         } catch (SchemaNotFoundException snfe) {

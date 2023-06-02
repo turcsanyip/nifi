@@ -31,7 +31,7 @@ package org.apache.nifi.logging;
  * within the same NiFi instance.
  * </li>
  * <li>
- * If the last value in an Object[] argument that is passed to the logger is a
+ * If the last value in an Object... argument that is passed to the logger is a
  * Throwable, then the logged message will include a <code>toString()</code> of
  * the Throwable; in addition, if the component's logger is set to DEBUG level
  * via the logback configuration, the Stacktrace will also be logged. This

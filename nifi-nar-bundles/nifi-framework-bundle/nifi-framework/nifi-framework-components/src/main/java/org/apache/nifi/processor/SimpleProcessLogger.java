@@ -82,22 +82,6 @@ public class SimpleProcessLogger implements ComponentLog {
     }
 
     @Override
-    public void warn(final String msg, final Object[] os, final Throwable t) {
-        if (isWarnEnabled()) {
-            final String componentMessage = getComponentMessage(msg);
-            final Object[] arguments = insertComponent(os);
-
-            if (t == null) {
-                logger.warn(componentMessage, arguments);
-                logRepository.addLogMessage(LogLevel.WARN, componentMessage, arguments);
-            } else {
-                logger.warn(componentMessage, addThrowable(arguments, t));
-                logRepository.addLogMessage(LogLevel.WARN, getCausesMessage(msg), addCauses(arguments, t), t);
-            }
-        }
-    }
-
-    @Override
     public void warn(final String msg) {
         warn(msg, NULL_THROWABLE);
     }
@@ -146,22 +130,6 @@ public class SimpleProcessLogger implements ComponentLog {
     @Override
     public void trace(final String msg) {
         trace(msg, NULL_THROWABLE);
-    }
-
-    @Override
-    public void trace(final String msg, final Object[] os, final Throwable t) {
-        if (isTraceEnabled()) {
-            final String componentMessage = getComponentMessage(msg);
-            final Object[] arguments = insertComponent(os);
-
-            if (t == null) {
-                logger.trace(componentMessage, arguments);
-                logRepository.addLogMessage(LogLevel.TRACE, componentMessage, arguments);
-            } else {
-                logger.trace(componentMessage, addThrowable(arguments, t));
-                logRepository.addLogMessage(LogLevel.TRACE, getCausesMessage(msg), addCauses(arguments, t), t);
-            }
-        }
     }
 
     @Override
@@ -236,22 +204,6 @@ public class SimpleProcessLogger implements ComponentLog {
     }
 
     @Override
-    public void info(final String msg, final Object[] os, final Throwable t) {
-        if (isInfoEnabled()) {
-            final String componentMessage = getComponentMessage(msg);
-            final Object[] arguments = insertComponent(os);
-
-            if (t == null) {
-                logger.info(componentMessage, arguments);
-                logRepository.addLogMessage(LogLevel.INFO, componentMessage, arguments);
-            } else {
-                logger.info(componentMessage, addThrowable(arguments, t));
-                logRepository.addLogMessage(LogLevel.INFO, getCausesMessage(msg), addCauses(arguments, t), t);
-            }
-        }
-    }
-
-    @Override
     public void info(LogMessage logMessage) {
         if (isInfoEnabled()) {
             log(LogLevel.INFO, logMessage);
@@ -303,22 +255,6 @@ public class SimpleProcessLogger implements ComponentLog {
     }
 
     @Override
-    public void error(final String msg, final Object[] os, final Throwable t) {
-        if (isErrorEnabled()) {
-            final String componentMessage = getComponentMessage(msg);
-            final Object[] arguments = insertComponent(os);
-
-            if (t == null) {
-                logger.error(componentMessage, arguments);
-                logRepository.addLogMessage(LogLevel.ERROR, componentMessage, arguments);
-            } else {
-                logger.error(componentMessage, addThrowable(arguments, t));
-                logRepository.addLogMessage(LogLevel.ERROR, getCausesMessage(msg), addCauses(arguments, t), t);
-            }
-        }
-    }
-
-    @Override
     public void error(final LogMessage logMessage) {
         if (isErrorEnabled()) {
             log(LogLevel.ERROR, logMessage);
@@ -355,22 +291,6 @@ public class SimpleProcessLogger implements ComponentLog {
             } else {
                 logger.debug(componentMessage, setFormattedThrowable(arguments, lastThrowable));
                 logRepository.addLogMessage(LogLevel.DEBUG, getCausesMessage(msg), setCauses(arguments, lastThrowable), lastThrowable);
-            }
-        }
-    }
-
-    @Override
-    public void debug(final String msg, final Object[] os, final Throwable t) {
-        if (isDebugEnabled()) {
-            final String componentMessage = getComponentMessage(msg);
-            final Object[] arguments = insertComponent(os);
-
-            if (t == null) {
-                logger.debug(componentMessage, arguments);
-                logRepository.addLogMessage(LogLevel.DEBUG, componentMessage, arguments);
-            } else {
-                logger.debug(componentMessage, addThrowable(arguments, t));
-                logRepository.addLogMessage(LogLevel.DEBUG, getCausesMessage(msg), addCauses(arguments, t), t);
             }
         }
     }
@@ -455,28 +375,6 @@ public class SimpleProcessLogger implements ComponentLog {
     }
 
     @Override
-    public void log(final LogLevel level, final String msg, final Object[] os, final Throwable t) {
-        switch (level) {
-            case DEBUG:
-                debug(msg, os, t);
-                break;
-            case ERROR:
-            case FATAL:
-                error(msg, os, t);
-                break;
-            case INFO:
-                info(msg, os, t);
-                break;
-            case TRACE:
-                trace(msg, os, t);
-                break;
-            case WARN:
-                warn(msg, os, t);
-                break;
-        }
-    }
-
-    @Override
     public void log(final LogMessage message) {
         switch (message.getLogLevel()) {
             case DEBUG:
@@ -531,15 +429,6 @@ public class SimpleProcessLogger implements ComponentLog {
 
     private Object[] insertComponent(final Object[] originalArgs) {
         return ArrayUtils.insert(0, originalArgs, component);
-    }
-
-    private Object[] addThrowable(final Object[] originalArgs, final Throwable throwable) {
-        return ArrayUtils.add(originalArgs, throwable);
-    }
-
-    private Object[] addCauses(final Object[] arguments, final Throwable throwable) {
-        final String causes = getCauses(throwable);
-        return ArrayUtils.add(arguments, causes);
     }
 
     private Object[] setCauses(final Object[] arguments, final Throwable throwable) {

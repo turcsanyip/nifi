@@ -19,10 +19,8 @@ package org.apache.nifi.atlas.provenance;
 import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.nifi.provenance.ProvenanceEventType;
 
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.Arrays;
 
 public abstract class AbstractNiFiProvenanceEventAnalyzer implements NiFiProvenanceEventAnalyzer {
@@ -37,20 +35,6 @@ public abstract class AbstractNiFiProvenanceEventAnalyzer implements NiFiProvena
             return new URI(uri);
         } catch (URISyntaxException e) {
             final String msg = String.format("Failed to parse uri %s due to %s", uri, e);
-            throw new IllegalArgumentException(msg, e);
-        }
-    }
-
-    /**
-     * Utility method to parse a string uri silently.
-     * @param url url to parse
-     * @return parsed URL instance
-     */
-    protected URL parseUrl(String url) {
-        try {
-            return URI.create(url).toURL();
-        } catch (IllegalArgumentException | MalformedURLException e) {
-            final String msg = String.format("Failed to parse url %s due to %s", url, e);
             throw new IllegalArgumentException(msg, e);
         }
     }

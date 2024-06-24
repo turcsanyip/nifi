@@ -23,21 +23,16 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 public class DataSetRefs {
-    private final Set<String> componentIds;
+    private final String componentId;
     private Set<Referenceable> inputs;
     private Set<Referenceable> outputs;
-    private boolean referableFromRootPath;
 
     public DataSetRefs(String componentId) {
-        this.componentIds = Collections.singleton(componentId);
+        this.componentId = componentId;
     }
 
-    public DataSetRefs(Set<String> componentIds) {
-        this.componentIds = componentIds;
-    }
-
-    public Set<String> getComponentIds() {
-        return componentIds;
+    public String getComponentId() {
+        return componentId;
     }
 
     public Set<Referenceable> getInputs() {

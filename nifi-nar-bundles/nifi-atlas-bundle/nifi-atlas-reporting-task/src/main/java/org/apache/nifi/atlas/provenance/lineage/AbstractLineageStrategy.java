@@ -33,7 +33,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -73,30 +72,24 @@ public abstract class AbstractLineageStrategy implements LineageStrategy {
 
     protected void addDataSetRefs(NiFiFlow nifiFlow, DataSetRefs refs) {
 
-        final Set<NiFiFlowPath> flowPaths = refs.getComponentIds().stream()
-                .map(componentId -> {
-                    final NiFiFlowPath flowPath = nifiFlow.findPath(componentId);
-                    if (flowPath == null) {
-                        logger.warn("FlowPath for {} was not found.", componentId);
-                    }
-                    return flowPath;
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+        final String componentId = refs.getComponentId();
+        final NiFiFlowPath flowPath = nifiFlow.findPath(componentId);
+        if (flowPath == null) {
+            logger.warn("FlowPath for {} was not found.", componentId);
+            return;
+        }
 
-        addDataSetRefs(nifiFlow, flowPaths, refs);
+        addDataSetRefs(nifiFlow, flowPath, refs);
     }
 
-    protected void addDataSetRefs(NiFiFlow nifiFlow, Set<NiFiFlowPath> flowPaths, DataSetRefs refs) {
+    protected void addDataSetRefs(NiFiFlow nifiFlow, NiFiFlowPath flowPath, DataSetRefs refs) {
         // create reference to NiFi flow path.
         final Referenceable flowRef = toReferenceable(nifiFlow);
         final String namespace = nifiFlow.getNamespace();
         final String url = nifiFlow.getUrl();
 
-        for (NiFiFlowPath flowPath : flowPaths) {
-            final Referenceable flowPathRef = toReferenceable(flowPath, flowRef, namespace, url);
-            addDataSetRefs(refs, flowPathRef);
-        }
+        final Referenceable flowPathRef = toReferenceable(flowPath, flowRef, namespace, url);
+        addDataSetRefs(refs, flowPathRef);
     }
 
     private Referenceable toReferenceable(NiFiFlow nifiFlow) {

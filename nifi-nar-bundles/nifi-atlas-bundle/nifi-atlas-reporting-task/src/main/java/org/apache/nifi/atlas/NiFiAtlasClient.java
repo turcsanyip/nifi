@@ -201,7 +201,7 @@ public class NiFiAtlasClient implements AutoCloseable {
         final Map<String, AtlasEntity> nifiFlowReferredEntities = nifiFlowExt.getReferredEntities();
         final Map<String, Object> attributes = nifiFlowEntity.getAttributes();
         final NiFiFlow nifiFlow = new NiFiFlow(rootProcessGroupId);
-        nifiFlow.setExEntity(nifiFlowEntity);
+        nifiFlow.setAtlasEntity(nifiFlowEntity);
         nifiFlow.setFlowName(toStr(attributes.get(ATTR_NAME)));
         nifiFlow.setNamespace(namespace);
         nifiFlow.setUrl(toStr(attributes.get(ATTR_URL)));
@@ -223,7 +223,7 @@ public class NiFiAtlasClient implements AutoCloseable {
                     flowPath.setGroupId(urlMatcher.group(1));
                 }
             }
-            flowPath.setExEntity(flowPathEntity);
+            flowPath.setAtlasEntity(flowPathEntity);
             flowPath.setName(toStr(flowPathEntity.getAttribute(ATTR_NAME)));
             flowPath.getInputs().addAll(toQualifiedNameIds(toAtlasObjectIds(flowPathEntity.getAttribute(ATTR_INPUTS))).keySet());
             flowPath.getOutputs().addAll(toQualifiedNameIds(toAtlasObjectIds(flowPathEntity.getAttribute(ATTR_OUTPUTS))).keySet());
@@ -383,11 +383,11 @@ public class NiFiAtlasClient implements AutoCloseable {
 
         if (!nifiFlow.isMetadataUpdated()) {
             // Nothing has been changed, return existing entity.
-            return nifiFlow.getExEntity();
+            return nifiFlow.getAtlasEntity();
         }
 
         // Create parent flow entity using existing NiFiFlow entity if available, so that common properties are taken over.
-        final AtlasEntity flowEntity = nifiFlow.getExEntity() != null ? new AtlasEntity(nifiFlow.getExEntity()) : new AtlasEntity();
+        final AtlasEntity flowEntity = nifiFlow.getAtlasEntity() != null ? new AtlasEntity(nifiFlow.getAtlasEntity()) : new AtlasEntity();
         flowEntity.setTypeName(TYPE_NIFI_FLOW);
         flowEntity.setVersion(1L);
         flowEntity.setAttribute(ATTR_NAME, nifiFlow.getFlowName());
@@ -498,7 +498,7 @@ public class NiFiAtlasClient implements AutoCloseable {
                 entity.setGuid(guidAssignments.get(guid));
                 final String pathId = getComponentIdFromQualifiedName(toStr(entity.getAttribute(ATTR_QUALIFIED_NAME)));
                 final NiFiFlowPath path = nifiFlow.getFlowPaths().get(pathId);
-                path.setExEntity(entity);
+                path.setAtlasEntity(entity);
             });
         }
 
@@ -510,7 +510,7 @@ public class NiFiAtlasClient implements AutoCloseable {
             updatedEntities.forEach(entity -> {
                 final String pathId = getComponentIdFromQualifiedName(toStr(entity.getAttribute(ATTR_QUALIFIED_NAME)));
                 final NiFiFlowPath path = nifiFlow.getFlowPaths().get(pathId);
-                path.setExEntity(entity);
+                path.setAtlasEntity(entity);
             });
         }
 

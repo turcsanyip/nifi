@@ -36,7 +36,6 @@ public class NiFiFlowPath implements AtlasProcess {
     private final Set<AtlasObjectId> inputs = new HashSet<>();
     private final Set<AtlasObjectId> outputs = new HashSet<>();
 
-    private String atlasGuid;
     private String name;
     private String groupId;
 
@@ -61,15 +60,6 @@ public class NiFiFlowPath implements AtlasProcess {
 
     public void setAtlasEntity(AtlasEntity atlasEntity) {
         this.atlasEntity = atlasEntity;
-        this.atlasGuid = atlasEntity.getGuid();
-    }
-
-    public String getAtlasGuid() {
-        return atlasGuid;
-    }
-
-    public void setAtlasGuid(String atlasGuid) {
-        this.atlasGuid = atlasGuid;
     }
 
     public String getName() {

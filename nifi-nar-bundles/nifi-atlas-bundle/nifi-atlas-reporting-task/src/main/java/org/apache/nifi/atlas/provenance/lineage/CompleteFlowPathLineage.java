@@ -106,7 +106,7 @@ public class CompleteFlowPathLineage extends AbstractLineageStrategy {
                 addDataSetRefs(dataSetRefs.getOutputs(), flowPathRef, ATTR_OUTPUTS);
                 createEntity(flowPathRef);
                 // Also, sending partial update message to update existing flow_path.
-                addDataSetRefs(nifiFlow, Collections.singleton(flowPath), createdFlowPath.getValue());
+                addDataSetRefs(nifiFlow, flowPath, createdFlowPath.getValue());
 
             }
             createdFlowPaths.clear();

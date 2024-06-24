@@ -39,7 +39,6 @@ import static org.apache.nifi.atlas.NiFiTypes.TYPE_NIFI_INPUT_PORT;
 import static org.apache.nifi.atlas.NiFiTypes.TYPE_NIFI_OUTPUT_PORT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.when;
 
@@ -79,9 +78,9 @@ public class TestNiFiRemotePort {
         final DataSetRefs refs = analyzer.analyze(context, sendEvent);
         assertEquals(0, refs.getInputs().size());
         assertEquals(1, refs.getOutputs().size());
-        assertEquals(1, refs.getComponentIds().size());
+        assertNotNull(refs.getComponentId());
         // Should report connected componentId.
-        assertTrue(refs.getComponentIds().contains("port-guid"));
+        assertEquals("port-guid", refs.getComponentId());
 
         Referenceable ref = refs.getOutputs().iterator().next();
         assertEquals(TYPE_NIFI_INPUT_PORT, ref.getTypeName());
@@ -157,9 +156,9 @@ public class TestNiFiRemotePort {
         final DataSetRefs refs = analyzer.analyze(context, sendEvent);
         assertEquals(0, refs.getInputs().size());
         assertEquals(1, refs.getOutputs().size());
-        assertEquals(1, refs.getComponentIds().size());
+        assertNotNull(refs.getComponentId());
         // Should report connected componentId.
-        assertTrue(refs.getComponentIds().contains("s2s-client-component-guid"));
+        assertEquals("s2s-client-component-guid", refs.getComponentId());
 
         Referenceable ref = refs.getOutputs().iterator().next();
         assertEquals(TYPE_NIFI_INPUT_PORT, ref.getTypeName());

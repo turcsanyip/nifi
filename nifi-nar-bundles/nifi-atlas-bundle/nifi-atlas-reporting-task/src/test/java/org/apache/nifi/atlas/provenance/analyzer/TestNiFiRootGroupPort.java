@@ -38,7 +38,6 @@ import static org.apache.nifi.atlas.NiFiTypes.TYPE_NIFI_INPUT_PORT;
 import static org.apache.nifi.atlas.NiFiTypes.TYPE_NIFI_OUTPUT_PORT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.when;
 
@@ -78,9 +77,9 @@ public class TestNiFiRootGroupPort {
         final DataSetRefs refs = analyzer.analyze(context, receiveEvent);
         assertEquals(1, refs.getInputs().size());
         assertEquals(0, refs.getOutputs().size());
-        assertEquals(1, refs.getComponentIds().size());
+        assertNotNull(refs.getComponentId());
         // Should report connected componentId.
-        assertTrue(refs.getComponentIds().contains("port-guid"));
+        assertEquals("port-guid", refs.getComponentId());
 
         Referenceable ref = refs.getInputs().iterator().next();
         assertEquals(TYPE_NIFI_INPUT_PORT, ref.getTypeName());
@@ -154,9 +153,9 @@ public class TestNiFiRootGroupPort {
         final DataSetRefs refs = analyzer.analyze(context, receiveEvent);
         assertEquals(1, refs.getInputs().size());
         assertEquals(0, refs.getOutputs().size());
-        assertEquals(1, refs.getComponentIds().size());
+        assertNotNull(refs.getComponentId());
         // Should report connected componentId.
-        assertTrue(refs.getComponentIds().contains("port-guid"));
+        assertEquals("port-guid", refs.getComponentId());
 
         Referenceable ref = refs.getInputs().iterator().next();
         assertEquals(TYPE_NIFI_INPUT_PORT, ref.getTypeName());

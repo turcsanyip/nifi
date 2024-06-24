@@ -67,7 +67,7 @@ public class NiFiFlow {
     private String namespace;
     private String url;
     private String atlasGuid;
-    private AtlasEntity exEntity;
+    private AtlasEntity atlasEntity;
     private AtlasObjectId atlasObjectId;
     private String description;
 
@@ -125,13 +125,13 @@ public class NiFiFlow {
         return new AtlasObjectId(atlasGuid, TYPE_NIFI_FLOW, Collections.singletonMap(ATTR_QUALIFIED_NAME, getQualifiedName()));
     }
 
-    public AtlasEntity getExEntity() {
-        return exEntity;
+    public AtlasEntity getAtlasEntity() {
+        return atlasEntity;
     }
 
-    public void setExEntity(AtlasEntity exEntity) {
-        this.exEntity = exEntity;
-        this.setAtlasGuid(exEntity.getGuid());
+    public void setAtlasEntity(AtlasEntity atlasEntity) {
+        this.atlasEntity = atlasEntity;
+        this.setAtlasGuid(atlasEntity.getGuid());
     }
 
     public String getAtlasGuid() {
@@ -415,7 +415,7 @@ public class NiFiFlow {
     }
 
     private EntityChangeType getFlowPathChangeType(NiFiFlowPath path) {
-        if (path.getExEntity() == null) {
+        if (path.getAtlasEntity() == null) {
             return EntityChangeType.CREATED;
         } else if (path.isMetadataUpdated() || urlUpdated) {
             return EntityChangeType.UPDATED;
@@ -446,7 +446,7 @@ public class NiFiFlow {
 
     private Tuple<EntityChangeType, AtlasEntity> toAtlasEntity(EntityChangeType changeType, final NiFiFlowPath path) {
 
-        final AtlasEntity entity = EntityChangeType.CREATED.equals(changeType) ? new AtlasEntity() : new AtlasEntity(path.getExEntity());
+        final AtlasEntity entity = EntityChangeType.CREATED.equals(changeType) ? new AtlasEntity() : new AtlasEntity(path.getAtlasEntity());
         entity.setTypeName(TYPE_NIFI_FLOW_PATH);
         entity.setVersion(1L);
         entity.setAttribute(ATTR_NIFI_FLOW, getAtlasObjectId());
@@ -523,7 +523,7 @@ public class NiFiFlow {
                         case AS_IS:
                             return toAtlasEntity(changeType, path);
                         default:
-                            return new Tuple<>(changeType, path.getExEntity());
+                            return new Tuple<>(changeType, path.getAtlasEntity());
                     }
                 }).collect(Collectors.groupingBy(Tuple::getKey, HashMap::new, Collectors.mapping(Tuple::getValue, Collectors.toList())));
 

@@ -40,7 +40,7 @@ public class NiFiFlowPath implements AtlasProcess {
     private String name;
     private String groupId;
 
-    private AtlasEntity exEntity;
+    private AtlasEntity atlasEntity;
 
     private AtomicBoolean metadataUpdated = new AtomicBoolean(false);
     private List<String> updateAudit = new ArrayList<>();
@@ -55,13 +55,13 @@ public class NiFiFlowPath implements AtlasProcess {
         this.id =  id + "::" + lineageHash;
     }
 
-    public AtlasEntity getExEntity() {
-        return exEntity;
+    public AtlasEntity getAtlasEntity() {
+        return atlasEntity;
     }
 
-    public void setExEntity(AtlasEntity exEntity) {
-        this.exEntity = exEntity;
-        this.atlasGuid = exEntity.getGuid();
+    public void setAtlasEntity(AtlasEntity atlasEntity) {
+        this.atlasEntity = atlasEntity;
+        this.atlasGuid = atlasEntity.getGuid();
     }
 
     public String getAtlasGuid() {

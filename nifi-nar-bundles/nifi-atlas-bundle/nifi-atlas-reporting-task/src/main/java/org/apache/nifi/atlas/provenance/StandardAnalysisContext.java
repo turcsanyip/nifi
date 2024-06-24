@@ -90,6 +90,7 @@ public class StandardAnalysisContext implements AnalysisContext {
         return getLineageResult(eventId, submission);
     }
 
+    @Override
     public ComputeLineageResult findParents(long eventId) {
         final ComputeLineageSubmission submission = provenanceRepository.submitExpandParents(eventId, null);
         return getLineageResult(eventId, submission);

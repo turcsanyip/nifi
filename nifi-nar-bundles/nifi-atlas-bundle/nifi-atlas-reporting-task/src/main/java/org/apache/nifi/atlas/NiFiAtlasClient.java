@@ -24,6 +24,7 @@ import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.model.SearchFilter;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasObjectId;
+import org.apache.atlas.model.instance.AtlasRelationship;
 import org.apache.atlas.model.instance.EntityMutationResponse;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.model.typedef.AtlasStructDef.AtlasAttributeDef;
@@ -65,6 +66,7 @@ import static org.apache.nifi.atlas.NiFiTypes.ATTR_OUTPUTS;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_OUTPUT_PORTS;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_QUALIFIED_NAME;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_QUEUES;
+import static org.apache.nifi.atlas.NiFiTypes.ATTR_RELATIONSHIP_STATUS;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_TYPENAME;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_URL;
 import static org.apache.nifi.atlas.NiFiTypes.ENTITIES;
@@ -225,8 +227,8 @@ public class NiFiAtlasClient implements AutoCloseable {
             }
             flowPath.setAtlasEntity(flowPathEntity);
             flowPath.setName(toStr(flowPathEntity.getAttribute(ATTR_NAME)));
-            flowPath.getInputs().addAll(toQualifiedNameIds(toAtlasObjectIds(flowPathEntity.getAttribute(ATTR_INPUTS))).keySet());
-            flowPath.getOutputs().addAll(toQualifiedNameIds(toAtlasObjectIds(flowPathEntity.getAttribute(ATTR_OUTPUTS))).keySet());
+            flowPath.getInputs().addAll(toAtlasObjectIds(flowPathEntity.getRelationshipAttribute(ATTR_INPUTS)));
+            flowPath.getOutputs().addAll(toAtlasObjectIds(flowPathEntity.getRelationshipAttribute(ATTR_OUTPUTS)));
             flowPath.startTrackingChanges(nifiFlow);
 
             flowPaths.put(flowPath.getId(), flowPath);
@@ -265,49 +267,23 @@ public class NiFiAtlasClient implements AutoCloseable {
                 .collect(Collectors.toMap(Tuple::getKey, Tuple::getValue));
     }
 
+    /**
+     * Retrieves AtlasObjectIds for the input/output relationships of a NiFiFlowPath.
+     * Also filters out the deleted relationships.
+     *
+     * @param _relationships input/output relationships of a NiFiFlowPath
+     * @return AtlasObjectIds of the active relationships
+     */
     @SuppressWarnings("unchecked")
-    private List<AtlasObjectId> toAtlasObjectIds(Object _references) {
-        if (_references == null) {
+    private List<AtlasObjectId> toAtlasObjectIds(Object _relationships) {
+        if (_relationships == null) {
             return Collections.emptyList();
         }
-        List<Map<String, Object>> references = (List<Map<String, Object>>) _references;
-        return references.stream()
-                .map(ref -> new AtlasObjectId(toStr(ref.get(ATTR_GUID)), toStr(ref.get(ATTR_TYPENAME)), ref))
+        List<Map<String, Object>> relationships = (List<Map<String, Object>>) _relationships;
+        return relationships.stream()
+                .filter(rel -> rel.get(ATTR_RELATIONSHIP_STATUS).equals(AtlasRelationship.Status.ACTIVE.name()))
+                .map(rel -> new AtlasObjectId(toStr(rel.get(ATTR_GUID)), toStr(rel.get(ATTR_TYPENAME)), Collections.singletonMap(ATTR_QUALIFIED_NAME, rel.get(ATTR_QUALIFIED_NAME))))
                 .collect(Collectors.toList());
-    }
-
-    /**
-     * <p>AtlasObjectIds returned from Atlas have GUID, but do not have qualifiedName, while ones created by the reporting task
-     * do not have GUID, but qualifiedName. AtlasObjectId.equals returns false for this combination.
-     * In order to match ids correctly, this method converts fetches actual entities from ids to get qualifiedName attribute.</p>
-     *
-     * <p>Also, AtlasObjectIds returned from Atlas does not have entity state.
-     * If Atlas is configured to use soft-delete (default), deleted ids are still returned.
-     * Fetched entities are used to determine whether an AtlasObjectId is still active or deleted.
-     * Deleted entities will not be included in the result of this method.
-     * </p>
-     * @param ids to convert
-     * @return AtlasObjectIds with qualifiedName
-     */
-    private Map<AtlasObjectId, AtlasEntity> toQualifiedNameIds(List<AtlasObjectId> ids) {
-        if (ids == null) {
-            return Collections.emptyMap();
-        }
-
-        return ids.stream().distinct().map(id -> {
-            try {
-                final AtlasEntity.AtlasEntityWithExtInfo entityExt = searchEntityDef(id);
-                final AtlasEntity entity = entityExt.getEntity();
-                if (AtlasEntity.Status.DELETED.equals(entity.getStatus())) {
-                    return null;
-                }
-                final Map<String, Object> uniqueAttrs = Collections.singletonMap(ATTR_QUALIFIED_NAME, entity.getAttribute(ATTR_QUALIFIED_NAME));
-                return new Tuple<>(new AtlasObjectId(id.getGuid(), id.getTypeName(), uniqueAttrs), entity);
-            } catch (AtlasServiceException e) {
-                logger.warn("Failed to search entity by id {}, due to {}", id, e);
-                return null;
-            }
-        }).filter(Objects::nonNull).collect(Collectors.toMap(Tuple::getKey, Tuple::getValue));
     }
 
     public void registerNiFiFlow(NiFiFlow nifiFlow) throws AtlasServiceException {

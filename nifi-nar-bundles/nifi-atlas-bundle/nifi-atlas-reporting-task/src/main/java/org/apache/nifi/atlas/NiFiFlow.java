@@ -85,7 +85,7 @@ public class NiFiFlow {
     private final Map<String, ProcessorStatus> processors = new HashMap<>();
     private final Map<String, RemoteProcessGroupStatus> remoteProcessGroups = new HashMap<>();
     private final Map<String, List<ConnectionStatus>> incomingConnections = new HashMap<>();
-    private final Map<String, List<ConnectionStatus>> outGoingConnections = new HashMap<>();
+    private final Map<String, List<ConnectionStatus>> outgoingConnections = new HashMap<>();
 
     private final Map<AtlasObjectId, AtlasEntity> queues = new HashMap<>();
     // Any Ports.
@@ -157,7 +157,7 @@ public class NiFiFlow {
     }
 
     public void addConnection(ConnectionStatus c) {
-        outGoingConnections.computeIfAbsent(c.getSourceId(), k -> new ArrayList<>()).add(c);
+        outgoingConnections.computeIfAbsent(c.getSourceId(), k -> new ArrayList<>()).add(c);
         incomingConnections.computeIfAbsent(c.getDestinationId(), k -> new ArrayList<>()).add(c);
     }
 
@@ -199,7 +199,7 @@ public class NiFiFlow {
     }
 
     public List<ConnectionStatus> getOutgoingConnections(String componentId) {
-        return outGoingConnections.get(componentId);
+        return outgoingConnections.get(componentId);
     }
 
     public void addInputPort(PortStatus port) {

@@ -55,6 +55,7 @@ public class NiFiTypes {
     public static final String ATTR_QUEUES = "queues";
     public static final String ATTR_INPUT_PORTS = "inputPorts";
     public static final String ATTR_OUTPUT_PORTS = "outputPorts";
+    public static final String ATTR_RELATIONSHIP_STATUS = "relationshipStatus";
 
     @FunctionalInterface
     interface EntityDefinition {

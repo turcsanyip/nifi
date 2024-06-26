@@ -16,7 +16,7 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer;
 
-import org.apache.atlas.v1.model.instance.Referenceable;
+import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.controller.status.ConnectionStatus;
@@ -67,11 +67,11 @@ public class NiFiRootGroupPort extends NiFiS2S {
 
         // The name of the port can be retrieved from any connection, use the first one.
         final ConnectionStatus connection = connections.get(0);
-        final Referenceable ref = new Referenceable(type);
-        ref.set(ATTR_NAME, isInputPort ? connection.getSourceName() : connection.getDestinationName());
-        ref.set(ATTR_QUALIFIED_NAME, toQualifiedName(s2SPort.namespace, rootPortId));
+        final AtlasEntity entity = new AtlasEntity(type);
+        entity.setAttribute(ATTR_NAME, isInputPort ? connection.getSourceName() : connection.getDestinationName());
+        entity.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(s2SPort.namespace, rootPortId));
 
-        return singleDataSetRef(event.getComponentId(), event.getEventType(), ref);
+        return singleDataSetRef(event.getComponentId(), event.getEventType(), entity);
     }
 
     @Override

@@ -16,7 +16,7 @@
  */
 package org.apache.nifi.atlas.provenance.lineage;
 
-import org.apache.atlas.v1.model.instance.Referenceable;
+import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.nifi.atlas.NiFiFlow;
 import org.apache.nifi.atlas.NiFiFlowPath;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
@@ -39,12 +39,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.CRC32;
 
+import static org.apache.nifi.atlas.AtlasUtils.getTypedQualifiedName;
 import static org.apache.nifi.atlas.AtlasUtils.toQualifiedName;
-import static org.apache.nifi.atlas.AtlasUtils.toStr;
-import static org.apache.nifi.atlas.AtlasUtils.toTypedQualifiedName;
-import static org.apache.nifi.atlas.NiFiTypes.ATTR_INPUTS;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_NAME;
-import static org.apache.nifi.atlas.NiFiTypes.ATTR_OUTPUTS;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_QUALIFIED_NAME;
 import static org.apache.nifi.atlas.NiFiTypes.TYPE_NIFI_QUEUE;
 import static org.apache.nifi.provenance.ProvenanceEventType.DROP;
@@ -57,7 +54,7 @@ public class CompleteFlowPathLineage extends AbstractLineageStrategy {
     }
 
     @Override
-    public void processEvent(AnalysisContext analysisContext, NiFiFlow nifiFlow, ProvenanceEventRecord event) {
+    public void processEvent(AnalysisContext analysisContext, LineageContext lineageContext, NiFiFlow nifiFlow, ProvenanceEventRecord event) {
         if (!ProvenanceEventType.DROP.equals(event.getEventType())) {
             return;
         }
@@ -73,43 +70,15 @@ public class CompleteFlowPathLineage extends AbstractLineageStrategy {
         analyzeLineagePath(analysisContext, lineagePath);
 
         // Input and output data set are both required to report lineage.
-        List<Tuple<NiFiFlowPath, DataSetRefs>> createdFlowPaths = new ArrayList<>();
         if (lineagePath.isComplete()) {
+            List<Tuple<NiFiFlowPath, DataSetRefs>> createdFlowPaths = new ArrayList<>();
             createCompleteFlowPath(nifiFlow, lineagePath, createdFlowPaths);
             for (Tuple<NiFiFlowPath, DataSetRefs> createdFlowPath : createdFlowPaths) {
                 final NiFiFlowPath flowPath = createdFlowPath.getKey();
-                // NOTE 1: FlowPath creation and DataSet references should be reported separately
-                // ------------------------------------------------------------------------------
-                // For example, with following provenance event inputs:
-                //   CREATE(F1), FORK (F1 -> F2, F3), DROP(F1), SEND (F2), SEND(F3), DROP(F2), DROP(F3),
-                // there is no guarantee that DROP(F2) and DROP(F3) are processed within the same cycle.
-                // If DROP(F3) is processed in different cycle, it needs to be added to the existing FlowPath
-                // that contains F1 -> F2, to be F1 -> F2, F3.
-                // Execution cycle 1: Path1 (source of F1 -> ForkA), ForkA_queue (F1 -> F2), Path2 (ForkA -> dest of F2)
-                // Execution cycle 2: Path1 (source of F1 -> ForkB), ForkB_queue (F1 -> F3), Path3 (ForkB -> dest of F3)
-
-                // NOTE 2: Both FlowPath creation and FlowPath update messages are required
-                // ------------------------------------------------------------------------
-                // For the 1st time when a lineage is found, nifi_flow_path and referred DataSets are created.
-                // If we notify these entities by a create 3 entities message (Path1, DataSet1, DataSet2)
-                // followed by 1 partial update message to add lineage (DataSet1 -> Path1 -> DataSet2), then
-                // the update message may arrive at Atlas earlier than the create message gets processed.
-                // If that happens, lineage among these entities will be missed.
-                // But as written in NOTE1, there is a case where existing nifi_flow_paths need to be updated.
-                // Also, we don't know if this is the 1st time or 2nd or later.
-                // So, we need to notify entity creation and also partial update messages.
-
-                // Create flow path entity with DataSet refs.
-                final Referenceable flowPathRef = toReferenceable(flowPath, nifiFlow);
                 final DataSetRefs dataSetRefs = createdFlowPath.getValue();
-                addDataSetRefs(dataSetRefs.getInputs(), flowPathRef, ATTR_INPUTS);
-                addDataSetRefs(dataSetRefs.getOutputs(), flowPathRef, ATTR_OUTPUTS);
-                createEntity(flowPathRef);
-                // Also, sending partial update message to update existing flow_path.
-                addDataSetRefs(nifiFlow, flowPath, createdFlowPath.getValue());
 
+                addDataSetRefs(lineageContext, nifiFlow, flowPath, dataSetRefs);
             }
-            createdFlowPaths.clear();
         }
     }
 
@@ -223,13 +192,13 @@ public class CompleteFlowPathLineage extends AbstractLineageStrategy {
         final DataSetRefs dataSetRefs = lineagePath.getRefs();
 
         // Process parents first.
-        Referenceable queueBetweenParent = null;
+        AtlasEntity queueBetweenParent = null;
         if (!lineagePath.getParents().isEmpty()) {
             // Add queue between this lineage path and parent.
-            queueBetweenParent = new Referenceable(TYPE_NIFI_QUEUE);
+            queueBetweenParent = new AtlasEntity(TYPE_NIFI_QUEUE);
             // The first event knows why this lineage has parents, e.g. FORK or JOIN.
             final String firstEventType = events.get(0).getEventType().name();
-            queueBetweenParent.set(ATTR_NAME, firstEventType);
+            queueBetweenParent.setAttribute(ATTR_NAME, firstEventType);
             dataSetRefs.addInput(queueBetweenParent);
 
             for (LineagePath parent : lineagePath.getParents()) {
@@ -241,7 +210,7 @@ public class CompleteFlowPathLineage extends AbstractLineageStrategy {
         // Create a variant path.
         // Calculate a hash from component_ids and input and output resource ids.
         final Stream<String> ioIds = Stream.concat(dataSetRefs.getInputs().stream(), dataSetRefs.getOutputs()
-                .stream()).map(ref -> toTypedQualifiedName(ref.getTypeName(), toStr(ref.get(ATTR_QUALIFIED_NAME))));
+                .stream()).map(entityExt -> getTypedQualifiedName(entityExt.getEntity()));
 
         final Stream<String> parentHashes = lineagePath.getParents().stream().map(p -> String.valueOf(p.getLineagePathHash()));
         final CRC32 crc32 = new CRC32();
@@ -256,7 +225,7 @@ public class CompleteFlowPathLineage extends AbstractLineageStrategy {
         // In order to differentiate a queue between parents and this flow_path, add the hash into the queue qname.
         // E.g, FF1 and FF2 read from dirA were merged, vs FF3 and FF4 read from dirB were merged then passed here, these two should be different queue.
         if (queueBetweenParent != null) {
-            queueBetweenParent.set(ATTR_QUALIFIED_NAME, toQualifiedName(nifiFlow.getNamespace(), firstComponentId + "::" + hash));
+            queueBetweenParent.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(nifiFlow.getNamespace(), firstComponentId + "::" + hash));
         }
 
         // If the same components emitted multiple provenance events consecutively, merge it to come up with a simpler name.

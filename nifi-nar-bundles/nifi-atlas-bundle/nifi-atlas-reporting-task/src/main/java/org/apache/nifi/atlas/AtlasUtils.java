@@ -16,6 +16,7 @@
  */
 package org.apache.nifi.atlas;
 
+import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasObjectId;
 
 import java.util.List;
@@ -46,6 +47,22 @@ public class AtlasUtils {
 
     public static String getNamespaceFromQualifiedName(String qualifiedName) {
         return qualifiedName.split("@")[1];
+    }
+
+    public static String getQualifiedName(AtlasObjectId objectId) {
+        return toStr(objectId.getUniqueAttributes().get(ATTR_QUALIFIED_NAME));
+    }
+
+    public static String getQualifiedName(AtlasEntity entity) {
+        return toStr(entity.getAttribute(ATTR_QUALIFIED_NAME));
+    }
+
+    public static String getTypedQualifiedName(AtlasObjectId objectId) {
+        return toTypedQualifiedName(objectId.getTypeName(), getQualifiedName(objectId));
+    }
+
+    public static String getTypedQualifiedName(AtlasEntity entity) {
+        return toTypedQualifiedName(entity.getTypeName(), getQualifiedName(entity));
     }
 
     public static String toTypedQualifiedName(String typeName, String qualifiedName) {

@@ -16,7 +16,7 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer;
 
-import org.apache.atlas.v1.model.instance.Referenceable;
+import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
@@ -46,7 +46,7 @@ public class FilePath extends AbstractFileSystemPathAnalyzer {
 
     @Override
     public DataSetRefs analyze(AnalysisContext context, ProvenanceEventRecord event) {
-        final Referenceable ref = new Referenceable(TYPE);
+        final AtlasEntity entity = new AtlasEntity(TYPE);
         final URI uri = parseUri(event.getTransitUri());
         final String namespace;
         try {
@@ -61,11 +61,11 @@ public class FilePath extends AbstractFileSystemPathAnalyzer {
 
         final String path = getPath(context, uri);
 
-        ref.set(ATTR_NAME, path);
-        ref.set(ATTR_PATH, path);
-        ref.set(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, path));
+        entity.setAttribute(ATTR_NAME, path);
+        entity.setAttribute(ATTR_PATH, path);
+        entity.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, path));
 
-        return singleDataSetRef(event.getComponentId(), event.getEventType(), ref);
+        return singleDataSetRef(event.getComponentId(), event.getEventType(), entity);
     }
 
     @Override

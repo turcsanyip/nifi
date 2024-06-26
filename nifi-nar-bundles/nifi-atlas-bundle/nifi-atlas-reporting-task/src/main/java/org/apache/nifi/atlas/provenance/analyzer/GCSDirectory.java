@@ -16,14 +16,6 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer;
 
-import org.apache.atlas.model.instance.AtlasEntity;
-import org.apache.atlas.model.instance.AtlasObjectId;
-import org.apache.atlas.v1.model.instance.Referenceable;
-
-import java.util.Map;
-
-import static org.apache.nifi.atlas.NiFiTypes.ATTR_QUALIFIED_NAME;
-
 /**
  * Analyzes a transit URI as a GCS bucket or directory (skipping the file name).
  * <p>
@@ -41,36 +33,9 @@ import static org.apache.nifi.atlas.NiFiTypes.ATTR_QUALIFIED_NAME;
  */
 public class GCSDirectory extends AbstractDirectoryAnalyzer {
 
-    static final String GCP_STORAGE_VIRTUAL_DIRECTORY = "gcp_storage_virtual_directory";
-    static final String REL_PARENT = "parent";
-
     @Override
     public String targetTransitUriPattern() {
         return "^gs://.+/.+$";
-    }
-
-    protected Referenceable convertToReferenceable(AtlasEntity entity, Map<String, AtlasEntity> knownEntities) {
-        if (entity == null) {
-            return null;
-        }
-
-        Referenceable ref = createReferenceable(entity);
-
-        if (GCP_STORAGE_VIRTUAL_DIRECTORY.equals(entity.getTypeName())) {
-            AtlasObjectId parentId = (AtlasObjectId) entity.getRelationshipAttribute(REL_PARENT);
-            if (parentId != null) {
-                AtlasEntity parentEntity = knownEntities.get(parentId.getUniqueAttributes().get(ATTR_QUALIFIED_NAME));
-                ref.set(REL_PARENT, convertToReferenceable(parentEntity, knownEntities));
-            }
-        }
-
-        return ref;
-    }
-
-    private Referenceable createReferenceable(AtlasEntity entity) {
-        Referenceable ref = new Referenceable(entity.getTypeName());
-        ref.setValues(entity.getAttributes());
-        return ref;
     }
 
 }

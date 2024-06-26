@@ -16,6 +16,7 @@
  */
 package org.apache.nifi.atlas;
 
+import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
 import org.apache.atlas.AtlasClientV2;
@@ -23,12 +24,16 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.model.SearchFilter;
 import org.apache.atlas.model.instance.AtlasEntity;
+import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
+import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.atlas.model.instance.AtlasRelationship;
 import org.apache.atlas.model.instance.EntityMutationResponse;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.model.typedef.AtlasStructDef.AtlasAttributeDef;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
+import org.apache.commons.collections4.ListUtils;
+import org.apache.nifi.atlas.provenance.lineage.LineageContext;
 import org.apache.nifi.util.StringUtils;
 import org.apache.nifi.util.Tuple;
 import org.slf4j.Logger;
@@ -45,12 +50,16 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.apache.nifi.atlas.AtlasUtils.findIdByQualifiedName;
 import static org.apache.nifi.atlas.AtlasUtils.getComponentIdFromQualifiedName;
+import static org.apache.nifi.atlas.AtlasUtils.getQualifiedName;
+import static org.apache.nifi.atlas.AtlasUtils.getTypedQualifiedName;
+import static org.apache.nifi.atlas.AtlasUtils.isGuidAssigned;
 import static org.apache.nifi.atlas.AtlasUtils.toStr;
 import static org.apache.nifi.atlas.NiFiFlow.EntityChangeType.AS_IS;
 import static org.apache.nifi.atlas.NiFiFlow.EntityChangeType.CREATED;
@@ -70,6 +79,8 @@ import static org.apache.nifi.atlas.NiFiTypes.ATTR_RELATIONSHIP_STATUS;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_TYPENAME;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_URL;
 import static org.apache.nifi.atlas.NiFiTypes.ENTITIES;
+import static org.apache.nifi.atlas.NiFiTypes.REL_PROCESS_INPUT;
+import static org.apache.nifi.atlas.NiFiTypes.REL_PROCESS_OUTPUT;
 import static org.apache.nifi.atlas.NiFiTypes.TYPE_NIFI_FLOW;
 import static org.apache.nifi.atlas.NiFiTypes.TYPE_NIFI_FLOW_PATH;
 import static org.apache.nifi.atlas.NiFiTypes.TYPE_NIFI_INPUT_PORT;
@@ -79,6 +90,8 @@ import static org.apache.nifi.atlas.NiFiTypes.TYPE_NIFI_QUEUE;
 public class NiFiAtlasClient implements AutoCloseable {
 
     private static final Logger logger = LoggerFactory.getLogger(NiFiAtlasClient.class);
+
+    private static final int CREATE_BATCH_SIZE = 100;
 
     private final AtlasClientV2 atlasClient;
 
@@ -217,7 +230,7 @@ public class NiFiAtlasClient implements AutoCloseable {
         final Map<AtlasObjectId, AtlasEntity> flowPathEntities = fetchFlowComponents(TYPE_NIFI_FLOW_PATH, nifiFlowReferredEntities);
 
         for (AtlasEntity flowPathEntity : flowPathEntities.values()) {
-            final String pathQualifiedName = toStr(flowPathEntity.getAttribute(ATTR_QUALIFIED_NAME));
+            final String pathQualifiedName = getQualifiedName(flowPathEntity);
             final NiFiFlowPath flowPath = new NiFiFlowPath(getComponentIdFromQualifiedName(pathQualifiedName));
             if (flowPathEntity.hasAttribute(ATTR_URL)) {
                 final Matcher urlMatcher = FLOW_PATH_URL_PATTERN.matcher(toStr(flowPathEntity.getAttribute(ATTR_URL)));
@@ -253,7 +266,7 @@ public class NiFiAtlasClient implements AutoCloseable {
                 .filter(referredEntity -> referredEntity.getTypeName().equals(componentType))
                 .filter(referredEntity -> referredEntity.getStatus() == AtlasEntity.Status.ACTIVE)
                 .map(referredEntity -> {
-                    final Map<String, Object> uniqueAttributes = Collections.singletonMap(ATTR_QUALIFIED_NAME, referredEntity.getAttribute(ATTR_QUALIFIED_NAME));
+                    final Map<String, Object> uniqueAttributes = Collections.singletonMap(ATTR_QUALIFIED_NAME, getQualifiedName(referredEntity));
                     final AtlasObjectId id = new AtlasObjectId(referredEntity.getGuid(), componentType, uniqueAttributes);
                     try {
                         final AtlasEntity.AtlasEntityWithExtInfo fetchedEntityExt = searchEntityDef(id);
@@ -402,7 +415,7 @@ public class NiFiAtlasClient implements AutoCloseable {
             for (AtlasEntity entity : createdEntities) {
 
                 final String guid = guidAssignments.get(entity.getGuid());
-                final String qualifiedName = toStr(entity.getAttribute(ATTR_QUALIFIED_NAME));
+                final String qualifiedName = getQualifiedName(entity);
                 if (StringUtils.isEmpty(guid)) {
                     logger.warn("GUID was not assigned for {}::{} for some reason.", entity.getTypeName(), qualifiedName);
                     continue;
@@ -472,7 +485,7 @@ public class NiFiAtlasClient implements AutoCloseable {
             createdEntities.forEach(entity -> {
                 final String guid = entity.getGuid();
                 entity.setGuid(guidAssignments.get(guid));
-                final String pathId = getComponentIdFromQualifiedName(toStr(entity.getAttribute(ATTR_QUALIFIED_NAME)));
+                final String pathId = getComponentIdFromQualifiedName(getQualifiedName(entity));
                 final NiFiFlowPath path = nifiFlow.getFlowPaths().get(pathId);
                 path.setAtlasEntity(entity);
             });
@@ -484,7 +497,7 @@ public class NiFiAtlasClient implements AutoCloseable {
             final EntityMutationResponse mutationResponse = atlasClient.updateEntities(atlasEntities);
             logger.debug("Updated FlowPath entities mutation response={}", mutationResponse);
             updatedEntities.forEach(entity -> {
-                final String pathId = getComponentIdFromQualifiedName(toStr(entity.getAttribute(ATTR_QUALIFIED_NAME)));
+                final String pathId = getComponentIdFromQualifiedName(getQualifiedName(entity));
                 final NiFiFlowPath path = nifiFlow.getFlowPaths().get(pathId);
                 path.setAtlasEntity(entity);
             });
@@ -494,7 +507,7 @@ public class NiFiAtlasClient implements AutoCloseable {
             return changedEntities.entrySet().stream()
                     .filter(entry -> !DELETED.equals(entry.getKey())).flatMap(entry -> entry.getValue().stream())
                     .map(path -> new AtlasObjectId(path.getGuid(), TYPE_NIFI_FLOW_PATH,
-                            Collections.singletonMap(ATTR_QUALIFIED_NAME, path.getAttribute(ATTR_QUALIFIED_NAME))))
+                            Collections.singletonMap(ATTR_QUALIFIED_NAME, getQualifiedName(path))))
                     .collect(Collectors.toSet());
         }
 
@@ -510,6 +523,89 @@ public class NiFiAtlasClient implements AutoCloseable {
         id.getUniqueAttributes().entrySet().stream().filter(entry -> entry.getValue() != null)
                 .forEach(entry -> attributes.put(entry.getKey(), entry.getValue().toString()));
         return atlasClient.getEntityByAttribute(id.getTypeName(), attributes, true, false);
+    }
+
+    public void saveLineage(LineageContext lineageContext) throws AtlasServiceException {
+        logger.debug("Saving LineageContext: {}", lineageContext);
+
+        Predicate<AtlasEntityWithExtInfo> isNewEntity = entityExt -> !isGuidAssigned(entityExt.getEntity().getGuid());
+
+        Map<String, AtlasEntity> flowPaths = lineageContext.getFlowPaths();
+        List<AtlasEntityWithExtInfo> newFlowPaths = flowPaths.values().stream()
+                .map(AtlasEntityWithExtInfo::new)
+                .filter(isNewEntity)
+                .collect(Collectors.toList());
+        createEntities(newFlowPaths);
+
+        Map<String, AtlasEntityWithExtInfo> dataSets = lineageContext.getDataSets();
+        List<AtlasEntityWithExtInfo> newDataSets = dataSets.values().stream()
+                .filter(isNewEntity)
+                .collect(Collectors.toList());
+        createEntities(newDataSets);
+
+        createFlowPathDataSetRelationships(flowPaths, dataSets, lineageContext.getFlowPathInputs(), true);
+        createFlowPathDataSetRelationships(flowPaths, dataSets, lineageContext.getFlowPathOutputs(), false);
+
+        lineageContext.commit();
+    }
+
+    private void createEntities(List<AtlasEntityWithExtInfo> entityExtList) throws AtlasServiceException {
+        for (List<AtlasEntityWithExtInfo> entityExtBatchList: ListUtils.partition(entityExtList, CREATE_BATCH_SIZE)) {
+            AtlasEntitiesWithExtInfo entitiesExt = new AtlasEntitiesWithExtInfo();
+
+            for (AtlasEntityWithExtInfo entityExt : entityExtBatchList) {
+                entitiesExt.addEntity(entityExt.getEntity());
+                if (entityExt.getReferredEntities() != null) {
+                    for (AtlasEntity referredEntity : entityExt.getReferredEntities().values()) {
+                        entitiesExt.addReferredEntity(referredEntity);
+                    }
+                }
+            }
+
+            EntityMutationResponse response = atlasClient.createEntities(entitiesExt);
+
+            for (AtlasEntityWithExtInfo entityExt : entityExtBatchList) {
+                AtlasEntity entity = entityExt.getEntity();
+                String assignedGuid = response.getGuidAssignments().get(entity.getGuid());
+                if (assignedGuid == null) {
+                    throw new IllegalStateException("Entity creation failed for entity: " + getTypedQualifiedName(entity));
+                }
+                entity.setGuid(assignedGuid);
+            }
+        }
+    }
+
+    private void createFlowPathDataSetRelationships(Map<String, AtlasEntity> flowPaths,
+                                                    Map<String, AtlasEntityWithExtInfo> dataSets,
+                                                    Map<String, Set<String>> flowPathDataSets,
+                                                    boolean isInput) throws AtlasServiceException {
+        for (Map.Entry<String, Set<String>> entry: flowPathDataSets.entrySet()) {
+            String flowPathQualifiedName = entry.getKey();
+            String flowPathGuid = flowPaths.get(flowPathQualifiedName).getGuid();
+
+            String relationshipName = isInput ? REL_PROCESS_INPUT : REL_PROCESS_OUTPUT;
+
+            for (String dataSetTypedQualifiedName: entry.getValue()) {
+                String dataSetGuid = dataSets.get(dataSetTypedQualifiedName).getEntity().getGuid();
+
+                AtlasRelationship relationship = new AtlasRelationship(relationshipName);
+
+                relationship.setEnd1(new AtlasObjectId(flowPathGuid));
+                relationship.setEnd2(new AtlasObjectId(dataSetGuid));
+
+                try {
+                    atlasClient.createRelationship(relationship);
+                } catch (AtlasServiceException ase) {
+                    if (ase.getStatus() == ClientResponse.Status.CONFLICT) {
+                        // the relationship has already been created by another node in the cluster
+                        logger.info("Relationship already exists. FlowPath: guid={} / qualifiedName={}, DataSet: guid={} / typedQualifiedName={}",
+                                flowPathGuid, flowPathQualifiedName, dataSetGuid, dataSetTypedQualifiedName);
+                    } else {
+                        throw ase;
+                    }
+                }
+            }
+        }
     }
 
 }

@@ -17,19 +17,17 @@
 package org.apache.nifi.atlas.provenance.analyzer;
 
 import org.apache.atlas.model.instance.AtlasEntity;
+import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.atlas.utils.AtlasPathExtractorUtil;
 import org.apache.atlas.utils.PathExtractorContext;
-import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.hadoop.fs.Path;
 import org.apache.nifi.atlas.provenance.AbstractNiFiProvenanceEventAnalyzer;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.provenance.ProvenanceEventRecord;
 
-import java.util.Map;
 
-import static org.apache.nifi.atlas.NiFiTypes.ATTR_NAME;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_QUALIFIED_NAME;
 
 /**
@@ -73,44 +71,31 @@ public class AzureADLSDirectory extends AbstractNiFiProvenanceEventAnalyzer {
         String namespace = context.getNamespaceResolver().fromHostNames(path.toUri().getHost());
 
         PathExtractorContext pathExtractorContext = new PathExtractorContext(namespace);
-        AtlasEntity.AtlasEntityWithExtInfo entityWithExtInfo = AtlasPathExtractorUtil.getPathEntity(path, pathExtractorContext);
+        AtlasEntityWithExtInfo fileEntityExt = AtlasPathExtractorUtil.getPathEntity(path, pathExtractorContext);
 
         // the last component of the URI is returned as a directory object but in fact it refers the filename
-        Referenceable fileRef = convertToReferenceable(entityWithExtInfo.getEntity(), pathExtractorContext.getKnownEntities());
-        Referenceable parentRef = (Referenceable) fileRef.get(ATTR_PARENT);
+        AtlasEntity fileEntity = fileEntityExt.getEntity();
+        AtlasObjectId parentObjectId = (AtlasObjectId) fileEntity.getRelationshipAttribute(ATTR_PARENT);
+        if (parentObjectId != null) {
+            AtlasEntity parentEntity = pathExtractorContext.getKnownEntities().get(parentObjectId.getUniqueAttributes().get(ATTR_QUALIFIED_NAME));
 
-        return parentRef != null ? singleDataSetRef(event.getComponentId(), event.getEventType(), parentRef) : null;
+            if (parentEntity != null) {
+                AtlasEntityWithExtInfo parentEntityExt = new AtlasEntityWithExtInfo(parentEntity);
+
+                pathExtractorContext.getKnownEntities().values().stream()
+                        .filter(entity -> !entity.getGuid().equals(fileEntity.getGuid()))
+                        .filter(entity -> !entity.getGuid().equals(parentEntity.getGuid()))
+                        .forEach(parentEntityExt::addReferredEntity);
+
+                return singleDataSetRef(event.getComponentId(), event.getEventType(), parentEntityExt);
+            }
+        }
+
+        return null;
     }
 
     @Override
     public String targetTransitUriPattern() {
         return "^abfs(s)?://.+@.+/.+$";
-    }
-
-    private Referenceable convertToReferenceable(AtlasEntity entity, Map<String, AtlasEntity> knownEntities) {
-        if (entity == null) {
-            return null;
-        }
-
-        Referenceable ref = new Referenceable(entity.getTypeName());
-
-        ref.set(ATTR_QUALIFIED_NAME, entity.getAttribute(ATTR_QUALIFIED_NAME));
-        ref.set(ATTR_NAME, entity.getAttribute(ATTR_NAME));
-
-        if (TYPE_DIRECTORY.equals(entity.getTypeName())) {
-            AtlasObjectId parentObjectId = (AtlasObjectId) entity.getRelationshipAttribute(ATTR_PARENT);
-            if (parentObjectId != null) {
-                AtlasEntity parentEntity = knownEntities.get(parentObjectId.getUniqueAttributes().get(ATTR_QUALIFIED_NAME));
-                ref.set(ATTR_PARENT, convertToReferenceable(parentEntity, knownEntities));
-            }
-        } else if (TYPE_CONTAINER.equals(entity.getTypeName())) {
-            AtlasObjectId accountObjectId = (AtlasObjectId) entity.getRelationshipAttribute(ATTR_ACCOUNT);
-            if (accountObjectId != null) {
-                AtlasEntity accountEntity = knownEntities.get(accountObjectId.getUniqueAttributes().get(ATTR_QUALIFIED_NAME));
-                ref.set(ATTR_ACCOUNT, convertToReferenceable(accountEntity, knownEntities));
-            }
-        }
-
-        return ref;
     }
 }

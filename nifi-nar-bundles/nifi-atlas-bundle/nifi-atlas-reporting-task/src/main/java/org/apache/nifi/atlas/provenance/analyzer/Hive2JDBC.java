@@ -16,7 +16,7 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer;
 
-import org.apache.atlas.v1.model.instance.Referenceable;
+import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.provenance.ProvenanceEventRecord;
@@ -117,11 +117,11 @@ public class Hive2JDBC extends AbstractHiveAnalyzer {
     private void addRefs(DataSetRefs refs, boolean isInput, String namespace,
                                        Set<Tuple<String, String>> tableNames) {
         tableNames.forEach(tableName -> {
-            final Referenceable ref = createTableRef(namespace, tableName);
+            final AtlasEntityWithExtInfo entityExt = createTableEntity(namespace, tableName);
             if (isInput) {
-                refs.addInput(ref);
+                refs.addInput(entityExt);
             } else {
-                refs.addOutput(ref);
+                refs.addOutput(entityExt);
             }
         });
     }

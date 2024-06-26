@@ -27,8 +27,6 @@ public interface LineageStrategy {
         return new ProvenanceEventType[0];
     }
 
-    void setLineageContext(LineageContext lineageContext);
-
-    void processEvent(AnalysisContext analysisContext, NiFiFlow nifiFlow, ProvenanceEventRecord event);
+    void processEvent(AnalysisContext analysisContext, LineageContext lineageContext, NiFiFlow nifiFlow, ProvenanceEventRecord event);
 
 }

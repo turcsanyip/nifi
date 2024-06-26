@@ -16,7 +16,8 @@
  */
 package org.apache.nifi.atlas.provenance;
 
-import org.apache.atlas.v1.model.instance.Referenceable;
+import org.apache.atlas.model.instance.AtlasEntity;
+import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -24,8 +25,8 @@ import java.util.Set;
 
 public class DataSetRefs {
     private final String componentId;
-    private Set<Referenceable> inputs;
-    private Set<Referenceable> outputs;
+    private Set<AtlasEntityWithExtInfo> inputs;
+    private Set<AtlasEntityWithExtInfo> outputs;
 
     public DataSetRefs(String componentId) {
         this.componentId = componentId;
@@ -35,22 +36,30 @@ public class DataSetRefs {
         return componentId;
     }
 
-    public Set<Referenceable> getInputs() {
+    public Set<AtlasEntityWithExtInfo> getInputs() {
         return inputs != null ? inputs : Collections.emptySet();
     }
 
-    public void addInput(Referenceable input) {
+    public void addInput(AtlasEntity input) {
+        addInput(new AtlasEntityWithExtInfo(input));
+    }
+
+    public void addInput(AtlasEntityWithExtInfo input) {
         if (inputs == null) {
             inputs = new LinkedHashSet<>();
         }
         inputs.add(input);
     }
 
-    public Set<Referenceable> getOutputs() {
+    public Set<AtlasEntityWithExtInfo> getOutputs() {
         return outputs != null ? outputs : Collections.emptySet();
     }
 
-    public void addOutput(Referenceable output) {
+    public void addOutput(AtlasEntity output) {
+        addOutput(new AtlasEntityWithExtInfo(output));
+    }
+
+    public void addOutput(AtlasEntityWithExtInfo output) {
         if (outputs == null) {
             outputs = new LinkedHashSet<>();
         }
@@ -61,4 +70,12 @@ public class DataSetRefs {
         return (inputs == null || inputs.isEmpty()) && (outputs == null || outputs.isEmpty());
     }
 
+    @Override
+    public String toString() {
+        return "DataSetRefs{" +
+                "componentId='" + componentId + '\'' +
+                ", inputs=" + inputs +
+                ", outputs=" + outputs +
+                '}';
+    }
 }

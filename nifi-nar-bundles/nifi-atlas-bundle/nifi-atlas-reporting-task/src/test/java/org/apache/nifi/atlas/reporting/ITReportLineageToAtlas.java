@@ -474,7 +474,6 @@ public class ITReportLineageToAtlas {
         reportingTask.setup(configurationContext);
         reportingTask.onTrigger(reportingContext);
         reportingTask.onUnscheduled();
-        reportingTask.onStopped();
     }
 
     private boolean useEmbeddedEmulator;

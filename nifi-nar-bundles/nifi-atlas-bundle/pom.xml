@@ -64,7 +64,7 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.atlas</groupId>
-                <artifactId>atlas-notification</artifactId>
+                <artifactId>atlas-common</artifactId>
                 <version>${atlas.version}</version>
                 <exclusions>
                     <exclusion>

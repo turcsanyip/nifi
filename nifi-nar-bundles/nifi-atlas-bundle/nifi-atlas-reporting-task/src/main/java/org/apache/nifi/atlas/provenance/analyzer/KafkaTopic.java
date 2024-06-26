@@ -16,7 +16,7 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer;
 
-import org.apache.atlas.v1.model.instance.Referenceable;
+import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.nifi.atlas.provenance.AbstractNiFiProvenanceEventAnalyzer;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
@@ -49,7 +49,7 @@ public class KafkaTopic extends AbstractNiFiProvenanceEventAnalyzer {
 
     @Override
     public DataSetRefs analyze(AnalysisContext context, ProvenanceEventRecord event) {
-        final Referenceable ref = new Referenceable(TYPE);
+        final AtlasEntity entity = new AtlasEntity(TYPE);
 
         final String transitUri = event.getTransitUri();
         if (transitUri == null) {
@@ -67,12 +67,12 @@ public class KafkaTopic extends AbstractNiFiProvenanceEventAnalyzer {
 
         final String topicName = uriMatcher.group(2);
 
-        ref.set(ATTR_NAME, topicName);
-        ref.set(ATTR_TOPIC, topicName);
-        ref.set(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, topicName));
-        ref.set(ATTR_URI, transitUri);
+        entity.setAttribute(ATTR_NAME, topicName);
+        entity.setAttribute(ATTR_TOPIC, topicName);
+        entity.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, topicName));
+        entity.setAttribute(ATTR_URI, transitUri);
 
-        return singleDataSetRef(event.getComponentId(), event.getEventType(), ref);
+        return singleDataSetRef(event.getComponentId(), event.getEventType(), entity);
     }
 
     @Override

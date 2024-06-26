@@ -25,7 +25,6 @@ import org.apache.atlas.model.instance.EntityMutationResponse;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
 import org.apache.atlas.v1.model.instance.Referenceable;
-import org.apache.atlas.v1.model.notification.HookNotificationV1;
 import org.apache.nifi.atlas.AtlasUtils;
 import org.apache.nifi.atlas.NiFiTypes;
 import org.eclipse.jetty.server.Connector;
@@ -79,7 +78,6 @@ public class AtlasAPIV2ServerEmulator {
     private static final Logger logger = LoggerFactory.getLogger(AtlasAPIV2ServerEmulator.class);
     private Server server;
     private ServerConnector httpConnector;
-    private AtlasNotificationServerEmulator notificationServerEmulator;
 
     public static void main(String[] args) throws Exception {
         final AtlasAPIV2ServerEmulator emulator = new AtlasAPIV2ServerEmulator();
@@ -94,21 +92,21 @@ public class AtlasAPIV2ServerEmulator {
         server.start();
         logger.info("Starting {} on port {}", AtlasAPIV2ServerEmulator.class.getSimpleName(), httpConnector.getLocalPort());
 
-        notificationServerEmulator.consume(m -> {
-            if (m instanceof HookNotificationV1.EntityCreateRequest) {
-                HookNotificationV1.EntityCreateRequest em = (HookNotificationV1.EntityCreateRequest) m;
-                for (Referenceable ref : em.getEntities()) {
-                    final AtlasEntity entity = toEntity(ref);
-                    createEntityByNotification(entity);
-                }
-            } else if (m instanceof HookNotificationV1.EntityPartialUpdateRequest) {
-                HookNotificationV1.EntityPartialUpdateRequest em
-                        = (HookNotificationV1.EntityPartialUpdateRequest) m;
-                final AtlasEntity entity = toEntity(em.getEntity());
-                entity.setAttribute(em.getAttribute(), em.getAttributeValue());
-                updateEntityByNotification(entity);
-            }
-        });
+//        notificationServerEmulator.consume(m -> {
+//            if (m instanceof HookNotificationV1.EntityCreateRequest) {
+//                HookNotificationV1.EntityCreateRequest em = (HookNotificationV1.EntityCreateRequest) m;
+//                for (Referenceable ref : em.getEntities()) {
+//                    final AtlasEntity entity = toEntity(ref);
+//                    createEntityByNotification(entity);
+//                }
+//            } else if (m instanceof HookNotificationV1.EntityPartialUpdateRequest) {
+//                HookNotificationV1.EntityPartialUpdateRequest em
+//                        = (HookNotificationV1.EntityPartialUpdateRequest) m;
+//                final AtlasEntity entity = toEntity(em.getEntity());
+//                entity.setAttribute(em.getAttribute(), em.getAttributeValue());
+//                updateEntityByNotification(entity);
+//            }
+//        });
     }
 
     @SuppressWarnings("unchecked")
@@ -215,12 +213,9 @@ public class AtlasAPIV2ServerEmulator {
         servletHandler.addServletWithMapping(SearchByUniqueAttributeServlet.class, "/entity/uniqueAttribute/type/*");
         servletHandler.addServletWithMapping(SearchBasicServlet.class, "/search/basic/");
         servletHandler.addServletWithMapping(LineageServlet.class, "/debug/lineage/");
-
-        notificationServerEmulator = new AtlasNotificationServerEmulator();
     }
 
     public void stop() throws Exception {
-        notificationServerEmulator.stop();
         server.stop();
     }
 

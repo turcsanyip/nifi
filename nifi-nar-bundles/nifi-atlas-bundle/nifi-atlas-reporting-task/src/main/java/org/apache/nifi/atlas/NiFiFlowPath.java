@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import static org.apache.nifi.atlas.AtlasUtils.getTypedQualifiedName;
 import static org.apache.nifi.atlas.AtlasUtils.updateMetadata;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_NAME;
 
@@ -45,6 +46,9 @@ public class NiFiFlowPath implements AtlasProcess {
     private List<String> updateAudit = new ArrayList<>();
     private Set<String> existingInputGuids;
     private Set<String> existingOutputGuids;
+
+    private Set<String> existingInputTypedQualifiedNames;
+    private Set<String> existingOutputTypedQualifiedNames;
 
 
     public NiFiFlowPath(String id) {
@@ -92,6 +96,14 @@ public class NiFiFlowPath implements AtlasProcess {
         return outputs;
     }
 
+    public boolean hasInput(AtlasEntity entity) {
+        return existingInputTypedQualifiedNames!= null && existingInputTypedQualifiedNames.contains(getTypedQualifiedName(entity));
+    }
+
+    public boolean hasOutput(AtlasEntity entity) {
+        return existingOutputTypedQualifiedNames != null && existingOutputTypedQualifiedNames.contains(getTypedQualifiedName(entity));
+    }
+
     public List<String> getProcessComponentIds() {
         return processComponentIds;
     }
@@ -119,6 +131,9 @@ public class NiFiFlowPath implements AtlasProcess {
         existingInputGuids = inputs.stream().map(AtlasObjectId::getGuid).collect(Collectors.toSet());
         existingOutputGuids = outputs.stream().map(AtlasObjectId::getGuid).collect(Collectors.toSet());
 
+        existingInputTypedQualifiedNames = inputs.stream().map(AtlasUtils::getTypedQualifiedName).collect(Collectors.toSet());
+        existingOutputTypedQualifiedNames = outputs.stream().map(AtlasUtils::getTypedQualifiedName).collect(Collectors.toSet());
+
         // Remove all nifi_queues those are owned by the nifiFlow to delete ones no longer exist.
         // Because it should be added again if not deleted when flow analysis finished.
         final Set<AtlasObjectId> ownedQueues = nifiFlow.getQueues().keySet();
@@ -144,8 +159,6 @@ public class NiFiFlowPath implements AtlasProcess {
     public String toString() {
         return "NiFiFlowPath{" +
                 "name='" + name + '\'' +
-                ", inputs=" + inputs +
-                ", outputs=" + outputs +
                 ", processComponentIds=" + processComponentIds +
                 '}';
     }

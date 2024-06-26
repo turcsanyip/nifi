@@ -16,7 +16,10 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer;
 
-import org.apache.atlas.v1.model.instance.Referenceable;
+import org.apache.atlas.model.instance.AtlasEntity;
+import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityExtInfo;
+import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
+import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.nifi.atlas.provenance.AbstractNiFiProvenanceEventAnalyzer;
 import org.apache.nifi.util.Tuple;
 
@@ -32,22 +35,25 @@ public abstract class AbstractHiveAnalyzer extends AbstractNiFiProvenanceEventAn
     static final String TYPE_TABLE = "hive_table";
     static final String ATTR_DB = "db";
 
-    protected Referenceable createDatabaseRef(String namespace, String databaseName) {
-        final Referenceable ref = new Referenceable(TYPE_DATABASE);
-        ref.set(ATTR_NAME, databaseName);
+    protected AtlasEntity createDatabaseEntity(String namespace, String databaseName) {
+        final AtlasEntity databaseEntity = new AtlasEntity(TYPE_DATABASE);
+        databaseEntity.setAttribute(ATTR_NAME, databaseName);
         // The attribute 'clusterName' is in the 'hive_db' Atlas entity so it cannot be changed.
         //  Using 'namespace' as value for lack of better solution.
-        ref.set(ATTR_CLUSTER_NAME, namespace);
-        ref.set(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, databaseName));
-        return ref;
+        databaseEntity.setAttribute(ATTR_CLUSTER_NAME, namespace);
+        databaseEntity.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, databaseName));
+        return databaseEntity;
     }
 
-    protected Referenceable createTableRef(String namespace, Tuple<String, String> tableName) {
-        final Referenceable ref = new Referenceable(TYPE_TABLE);
-        ref.set(ATTR_NAME, tableName.getValue());
-        ref.set(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, toTableNameStr(tableName)));
-        ref.set(ATTR_DB, createDatabaseRef(namespace, tableName.getKey()));
-        return ref;
+    protected AtlasEntityWithExtInfo createTableEntity(String namespace, Tuple<String, String> tableName) {
+        final AtlasEntity databaseEntity = createDatabaseEntity(namespace, tableName.getKey());
+
+        final AtlasEntity tableEntity = new AtlasEntity(TYPE_TABLE);
+        tableEntity.setAttribute(ATTR_NAME, tableName.getValue());
+        tableEntity.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, toTableNameStr(tableName)));
+        tableEntity.setAttribute(ATTR_DB, new AtlasObjectId(databaseEntity.getGuid()));
+
+        return new AtlasEntityWithExtInfo(tableEntity, new AtlasEntityExtInfo(databaseEntity));
     }
 
 }

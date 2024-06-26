@@ -57,6 +57,9 @@ public class NiFiTypes {
     public static final String ATTR_OUTPUT_PORTS = "outputPorts";
     public static final String ATTR_RELATIONSHIP_STATUS = "relationshipStatus";
 
+    public static final String REL_PROCESS_INPUT = "dataset_process_inputs";
+    public static final String REL_PROCESS_OUTPUT = "process_dataset_outputs";
+
     @FunctionalInterface
     interface EntityDefinition {
         void define(AtlasEntityDef entity, Set<String> superTypes, List<AtlasAttributeDef> attributes);

@@ -16,15 +16,6 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer;
 
-import org.apache.atlas.model.instance.AtlasEntity;
-import org.apache.atlas.model.instance.AtlasObjectId;
-import org.apache.atlas.utils.AtlasPathExtractorUtil;
-import org.apache.atlas.v1.model.instance.Referenceable;
-
-import java.util.Map;
-
-import static org.apache.nifi.atlas.NiFiTypes.ATTR_QUALIFIED_NAME;
-
 /**
  * Analyze a transit URI as an AWS S3 directory (skipping the object name).
  * The analyzer outputs a v1 or v2 AWS S3 directory entity depending on the 'AWS S3 Model Version' property configured on the reporting task.
@@ -55,49 +46,9 @@ import static org.apache.nifi.atlas.NiFiTypes.ATTR_QUALIFIED_NAME;
  */
 public class AwsS3Directory extends AbstractDirectoryAnalyzer {
 
-    public static final String TYPE_DIRECTORY_V1 = AtlasPathExtractorUtil.AWS_S3_PSEUDO_DIR;
-    public static final String TYPE_BUCKET_V1 = AtlasPathExtractorUtil.AWS_S3_BUCKET;
-    public static final String ATTR_BUCKET_V1 = AtlasPathExtractorUtil.ATTRIBUTE_BUCKET;
-    public static final String ATTR_OBJECT_PREFIX_V1 = AtlasPathExtractorUtil.ATTRIBUTE_OBJECT_PREFIX;
-
-    public static final String TYPE_DIRECTORY_V2 = AtlasPathExtractorUtil.AWS_S3_V2_PSEUDO_DIR;
-    public static final String TYPE_BUCKET_V2 = AtlasPathExtractorUtil.AWS_S3_V2_BUCKET;
-    public static final String ATTR_CONTAINER_V2 = AtlasPathExtractorUtil.ATTRIBUTE_CONTAINER;
-    public static final String ATTR_OBJECT_PREFIX_V2 = AtlasPathExtractorUtil.ATTRIBUTE_OBJECT_PREFIX;
-
     @Override
     public String targetTransitUriPattern() {
         return "^s3a://.+/.+$";
-    }
-
-    protected Referenceable convertToReferenceable(AtlasEntity entity, Map<String, AtlasEntity> knownEntities) {
-        if (entity == null) {
-            return null;
-        }
-
-        Referenceable ref = createReferenceable(entity);
-
-        if (TYPE_DIRECTORY_V1.equals(entity.getTypeName())) {
-            AtlasObjectId bucketObjectId = (AtlasObjectId) entity.getRelationshipAttribute(ATTR_BUCKET_V1);
-            if (bucketObjectId != null) {
-                AtlasEntity bucketEntity = knownEntities.get(bucketObjectId.getUniqueAttributes().get(ATTR_QUALIFIED_NAME));
-                ref.set(ATTR_BUCKET_V1, convertToReferenceable(bucketEntity, knownEntities));
-            }
-        } else if (TYPE_DIRECTORY_V2.equals(entity.getTypeName())) {
-            AtlasObjectId containerObjectId = (AtlasObjectId) entity.getRelationshipAttribute(ATTR_CONTAINER_V2);
-            if (containerObjectId != null) {
-                AtlasEntity containerEntity = knownEntities.get(containerObjectId.getUniqueAttributes().get(ATTR_QUALIFIED_NAME));
-                ref.set(ATTR_CONTAINER_V2, convertToReferenceable(containerEntity, knownEntities));
-            }
-        }
-
-        return ref;
-    }
-
-    private Referenceable createReferenceable(AtlasEntity entity) {
-        Referenceable ref = new Referenceable(entity.getTypeName());
-        ref.setValues(entity.getAttributes());
-        return ref;
     }
 
 }

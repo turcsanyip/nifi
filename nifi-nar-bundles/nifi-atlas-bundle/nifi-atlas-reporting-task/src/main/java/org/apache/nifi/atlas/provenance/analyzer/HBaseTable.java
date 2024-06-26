@@ -16,7 +16,10 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer;
 
-import org.apache.atlas.v1.model.instance.Referenceable;
+import org.apache.atlas.model.instance.AtlasEntity;
+import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityExtInfo;
+import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
+import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.nifi.atlas.provenance.AbstractNiFiProvenanceEventAnalyzer;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
@@ -68,10 +71,10 @@ public class HBaseTable extends AbstractNiFiProvenanceEventAnalyzer {
         final String hbaseNamespaceName = uriMatcher.group(3) != null ? uriMatcher.group(3) : DEFAULT_NAMESPACE;
         final String hbaseTableName = uriMatcher.group(4);
 
-        final Referenceable hbaseNamespaceRef = createHBaseNamespaceRef(namespace, hbaseNamespaceName);
-        final Referenceable hbaseTableRef = getHBaseTableRef(namespace, hbaseTableName, hbaseNamespaceRef);
+        final AtlasEntity hbaseNamespaceEntity = createHBaseNamespaceEntity(namespace, hbaseNamespaceName);
+        final AtlasEntityWithExtInfo hbaseTableEntityExt = getHBaseTableEntity(namespace, hbaseTableName, hbaseNamespaceEntity);
 
-        return singleDataSetRef(event.getComponentId(), event.getEventType(), hbaseTableRef);
+        return singleDataSetRef(event.getComponentId(), event.getEventType(), hbaseTableEntityExt);
     }
 
     @Override
@@ -79,27 +82,27 @@ public class HBaseTable extends AbstractNiFiProvenanceEventAnalyzer {
         return "^hbase://.+$";
     }
 
-    private Referenceable createHBaseNamespaceRef(String namespace, String hbaseNamespaceName) {
-        final Referenceable hbaseNamespaceRef = new Referenceable(TYPE_HBASE_NAMESPACE);
+    private AtlasEntity createHBaseNamespaceEntity(String namespace, String hbaseNamespaceName) {
+        final AtlasEntity hbaseNamespaceEntity = new AtlasEntity(TYPE_HBASE_NAMESPACE);
 
-        hbaseNamespaceRef.set(ATTR_NAME, hbaseNamespaceName);
-        hbaseNamespaceRef.set(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, hbaseNamespaceName));
-        hbaseNamespaceRef.set(ATTR_CLUSTER_NAME, namespace);
+        hbaseNamespaceEntity.setAttribute(ATTR_NAME, hbaseNamespaceName);
+        hbaseNamespaceEntity.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, hbaseNamespaceName));
+        hbaseNamespaceEntity.setAttribute(ATTR_CLUSTER_NAME, namespace);
 
-        return hbaseNamespaceRef;
+        return hbaseNamespaceEntity;
     }
 
-    private Referenceable getHBaseTableRef(String namespace, String hbaseTableName, Referenceable hbaseNamespaceRef) {
-        final Referenceable hbaseTableRef = new Referenceable(TYPE_HBASE_TABLE);
+    private AtlasEntityWithExtInfo getHBaseTableEntity(String namespace, String hbaseTableName, AtlasEntity hbaseNamespaceEntity) {
+        final AtlasEntity hbaseTableEntity = new AtlasEntity(TYPE_HBASE_TABLE);
 
-        final String hbaseTableFullName = String.format("%s:%s", hbaseNamespaceRef.get(ATTR_NAME), hbaseTableName);
-        final boolean isDefaultHBaseNamespace = DEFAULT_NAMESPACE.equals(hbaseNamespaceRef.get(ATTR_NAME));
+        final String hbaseTableFullName = String.format("%s:%s", hbaseNamespaceEntity.getAttribute(ATTR_NAME), hbaseTableName);
+        final boolean isDefaultHBaseNamespace = DEFAULT_NAMESPACE.equals(hbaseNamespaceEntity.getAttribute(ATTR_NAME));
 
-        hbaseTableRef.set(ATTR_NAME, isDefaultHBaseNamespace ? hbaseTableName : hbaseTableFullName);
-        hbaseTableRef.set(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, hbaseTableFullName));
-        hbaseTableRef.set(ATTR_NAMESPACE, hbaseNamespaceRef);
-        hbaseTableRef.set(ATTR_URI, isDefaultHBaseNamespace ? hbaseTableName : hbaseTableFullName);
+        hbaseTableEntity.setAttribute(ATTR_NAME, isDefaultHBaseNamespace ? hbaseTableName : hbaseTableFullName);
+        hbaseTableEntity.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, hbaseTableFullName));
+        hbaseTableEntity.setAttribute(ATTR_NAMESPACE, new AtlasObjectId(hbaseNamespaceEntity.getGuid()));
+        hbaseTableEntity.setAttribute(ATTR_URI, isDefaultHBaseNamespace ? hbaseTableName : hbaseTableFullName);
 
-        return hbaseTableRef;
+        return new AtlasEntityWithExtInfo(hbaseTableEntity, new AtlasEntityExtInfo(hbaseNamespaceEntity));
     }
 }

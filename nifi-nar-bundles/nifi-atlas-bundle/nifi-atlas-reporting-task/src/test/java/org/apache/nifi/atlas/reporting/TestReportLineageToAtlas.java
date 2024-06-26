@@ -19,8 +19,6 @@ package org.apache.nifi.atlas.reporting;
 import com.sun.jersey.api.client.Client;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasClientV2;
-import org.apache.atlas.hook.AtlasHook;
-import org.apache.commons.configuration.Configuration;
 import org.apache.nifi.atlas.NiFiAtlasClient;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.components.ValidationResult;
@@ -70,10 +68,8 @@ import static org.apache.nifi.atlas.reporting.ReportLineageToAtlas.ATLAS_PASSWOR
 import static org.apache.nifi.atlas.reporting.ReportLineageToAtlas.ATLAS_READ_TIMEOUT;
 import static org.apache.nifi.atlas.reporting.ReportLineageToAtlas.ATLAS_URLS;
 import static org.apache.nifi.atlas.reporting.ReportLineageToAtlas.ATLAS_USER;
-import static org.apache.nifi.atlas.reporting.ReportLineageToAtlas.KAFKA_BOOTSTRAP_SERVERS;
 import static org.apache.nifi.atlas.reporting.ReportLineageToAtlas.SSL_CONTEXT_SERVICE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -467,36 +463,6 @@ public class TestReportLineageToAtlas {
     }
 
     @Test
-    public void testNotificationSendingIsSynchronousWhenAtlasConfIsGenerated() throws Exception {
-        Map<PropertyDescriptor, String> properties = initReportingTaskProperties(atlasConfDir);
-
-        testNotificationSendingIsSynchronous(properties);
-    }
-
-    @Test
-    public void testNotificationSendingIsSynchronousWhenAtlasConfIsProvidedAndSynchronousModeHasBeenSet() throws Exception {
-        Properties atlasConf = new Properties();
-        atlasConf.setProperty(AtlasHook.ATLAS_NOTIFICATION_ASYNCHRONOUS, "false");
-        saveAtlasConf(atlasConf);
-
-        Map<PropertyDescriptor, String> properties = initReportingTaskProperties(atlasConfDir);
-        properties.put(ATLAS_CONF_CREATE, "false");
-
-        testNotificationSendingIsSynchronous(properties);
-    }
-
-    private void testNotificationSendingIsSynchronous(Map<PropertyDescriptor, String> properties) throws Exception {
-        ConfigurationContext configurationContext = new MockConfigurationContext(properties, null);
-
-        testSubject.initialize(initializationContext);
-        testSubject.setup(configurationContext);
-
-        Configuration atlasProperties = ApplicationProperties.get();
-        boolean isAsync = atlasProperties.getBoolean(AtlasHook.ATLAS_NOTIFICATION_ASYNCHRONOUS, Boolean.TRUE);
-        assertFalse(isAsync);
-    }
-
-    @Test
     public void testThrowExceptionWhenAtlasConfIsProvidedButSynchronousModeHasNotBeenSet() throws Exception {
         Properties atlasConf = new Properties();
         saveAtlasConf(atlasConf);
@@ -526,7 +492,6 @@ public class TestReportLineageToAtlas {
         properties.put(ATLAS_DEFAULT_CLUSTER_NAME, "defaultClusterName");
         properties.put(ATLAS_USER, "admin");
         properties.put(ATLAS_PASSWORD, "password");
-        properties.put(KAFKA_BOOTSTRAP_SERVERS, "http://localhost:9092");
 
         return properties;
     }

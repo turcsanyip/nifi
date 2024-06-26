@@ -16,7 +16,7 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer;
 
-import org.apache.atlas.v1.model.instance.Referenceable;
+import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.provenance.ProvenanceEventRecord;
@@ -50,8 +50,8 @@ public class PutHiveStreaming extends AbstractHiveAnalyzer {
 
         final DataSetRefs refs = new DataSetRefs(event.getComponentId());
         outputTables.forEach(tableName -> {
-            final Referenceable ref = createTableRef(namespace, tableName);
-            refs.addOutput(ref);
+            final AtlasEntityWithExtInfo entityExt = createTableEntity(namespace, tableName);
+            refs.addOutput(entityExt);
         });
         return refs;
     }

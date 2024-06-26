@@ -19,14 +19,11 @@ package org.apache.nifi.atlas.provenance.analyzer;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.utils.AtlasPathExtractorUtil;
 import org.apache.atlas.utils.PathExtractorContext;
-import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.hadoop.fs.Path;
 import org.apache.nifi.atlas.provenance.AbstractNiFiProvenanceEventAnalyzer;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.provenance.ProvenanceEventRecord;
-
-import java.util.Map;
 
 public abstract class AbstractDirectoryAnalyzer extends AbstractNiFiProvenanceEventAnalyzer {
 
@@ -46,10 +43,10 @@ public abstract class AbstractDirectoryAnalyzer extends AbstractNiFiProvenanceEv
         PathExtractorContext pathExtractorContext = new PathExtractorContext(namespace, context.getAwsS3ModelVersion());
         AtlasEntity.AtlasEntityWithExtInfo entityWithExtInfo = AtlasPathExtractorUtil.getPathEntity(path, pathExtractorContext);
 
-        Referenceable ref = convertToReferenceable(entityWithExtInfo.getEntity(), pathExtractorContext.getKnownEntities());
+        pathExtractorContext.getKnownEntities().values().stream()
+                .filter(entity -> !entity.getGuid().equals(entityWithExtInfo.getEntity().getGuid()))
+                .forEach(entityWithExtInfo::addReferredEntity);
 
-        return ref != null ? singleDataSetRef(event.getComponentId(), event.getEventType(), ref) : null;
+        return singleDataSetRef(event.getComponentId(), event.getEventType(), entityWithExtInfo);
     }
-
-    protected abstract Referenceable convertToReferenceable(AtlasEntity entity, Map<String, AtlasEntity> knownEntities);
 }

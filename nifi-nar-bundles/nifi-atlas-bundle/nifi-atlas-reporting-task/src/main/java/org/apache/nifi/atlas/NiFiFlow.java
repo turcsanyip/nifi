@@ -21,7 +21,6 @@ import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.nifi.controller.status.ConnectionStatus;
 import org.apache.nifi.controller.status.PortStatus;
 import org.apache.nifi.controller.status.ProcessorStatus;
-import org.apache.nifi.controller.status.RemoteProcessGroupStatus;
 import org.apache.nifi.util.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,14 +82,10 @@ public class NiFiFlow {
 
     private final Map<String, NiFiFlowPath> flowPaths = new HashMap<>();
     private final Map<String, ProcessorStatus> processors = new HashMap<>();
-    private final Map<String, RemoteProcessGroupStatus> remoteProcessGroups = new HashMap<>();
     private final Map<String, List<ConnectionStatus>> incomingConnections = new HashMap<>();
     private final Map<String, List<ConnectionStatus>> outgoingConnections = new HashMap<>();
 
     private final Map<AtlasObjectId, AtlasEntity> queues = new HashMap<>();
-    // Any Ports.
-    private final Map<String, PortStatus> inputPorts = new HashMap<>();
-    private final Map<String, PortStatus> outputPorts = new HashMap<>();
     // Root Group Ports.
     private final Map<String, PortStatus> rootInputPorts = new HashMap<>();
     private final Map<String, PortStatus> rootOutputPorts = new HashMap<>();
@@ -169,10 +164,6 @@ public class NiFiFlow {
         return processors;
     }
 
-    public void addRemoteProcessGroup(RemoteProcessGroupStatus r) {
-        remoteProcessGroups.put(r.getId(), r);
-    }
-
     public void setFlowName(String flowName) {
         updateMetadata(metadataUpdated, updateAudit, ATTR_NAME, this.flowName, flowName);
         this.flowName = flowName;
@@ -200,22 +191,6 @@ public class NiFiFlow {
 
     public List<ConnectionStatus> getOutgoingConnections(String componentId) {
         return outgoingConnections.get(componentId);
-    }
-
-    public void addInputPort(PortStatus port) {
-        inputPorts.put(port.getId(), port);
-    }
-
-    public Map<String, PortStatus> getInputPorts() {
-        return inputPorts;
-    }
-
-    public void addOutputPort(PortStatus port) {
-        outputPorts.put(port.getId(), port);
-    }
-
-    public Map<String, PortStatus> getOutputPorts() {
-        return outputPorts;
     }
 
     public void addRootInputPort(PortStatus port) {
@@ -325,14 +300,6 @@ public class NiFiFlow {
 
     public boolean isProcessor(String componentId) {
         return processors.containsKey(componentId);
-    }
-
-    public boolean isInputPort(String componentId) {
-        return inputPorts.containsKey(componentId);
-    }
-
-    public boolean isOutputPort(String componentId) {
-        return outputPorts.containsKey(componentId);
     }
 
     public boolean isRootInputPort(String componentId) {

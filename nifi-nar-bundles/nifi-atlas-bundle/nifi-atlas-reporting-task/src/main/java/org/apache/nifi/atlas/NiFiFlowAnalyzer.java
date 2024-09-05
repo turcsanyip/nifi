@@ -50,9 +50,6 @@ public class NiFiFlowAnalyzer {
 
         processGroupStatus.getConnectionStatus().forEach(c -> nifiFlow.addConnection(c));
         processGroupStatus.getProcessorStatus().forEach(p -> nifiFlow.addProcessor(p));
-        processGroupStatus.getRemoteProcessGroupStatus().forEach(r -> nifiFlow.addRemoteProcessGroup(r));
-        processGroupStatus.getInputPortStatus().forEach(p -> nifiFlow.addInputPort(p));
-        processGroupStatus.getOutputPortStatus().forEach(p -> nifiFlow.addOutputPort(p));
 
         // Analyze child ProcessGroups recursively.
         for (ProcessGroupStatus child : processGroupStatus.getProcessGroupStatus()) {

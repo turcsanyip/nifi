@@ -19,6 +19,7 @@ package org.apache.nifi.atlas;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.nifi.controller.status.ConnectionStatus;
+import org.apache.nifi.controller.status.PortStatus;
 import org.apache.nifi.controller.status.ProcessGroupStatus;
 import org.apache.nifi.controller.status.ProcessorStatus;
 import org.apache.nifi.util.Tuple;
@@ -36,26 +37,22 @@ public class NiFiFlowAnalyzer {
 
     private static final Logger logger = LoggerFactory.getLogger(NiFiFlowAnalyzer.class);
 
-    public void analyzeProcessGroup(NiFiFlow nifiFlow, ProcessGroupStatus rootProcessGroup) {
-        analyzeProcessGroup(rootProcessGroup, nifiFlow);
-        analyzeRootGroupPorts(nifiFlow, rootProcessGroup);
-    }
-
-    private void analyzeRootGroupPorts(NiFiFlow nifiFlow, ProcessGroupStatus rootProcessGroup) {
-        rootProcessGroup.getInputPortStatus().forEach(port -> nifiFlow.addRootInputPort(port));
-        rootProcessGroup.getOutputPortStatus().forEach(port -> nifiFlow.addRootOutputPort(port));
-    }
-
-    private void analyzeProcessGroup(final ProcessGroupStatus processGroupStatus, final NiFiFlow nifiFlow) {
-
-        processGroupStatus.getConnectionStatus().forEach(c -> nifiFlow.addConnection(c));
+    public void analyzeProcessGroup(NiFiFlow nifiFlow, ProcessGroupStatus processGroupStatus) {
         processGroupStatus.getProcessorStatus().forEach(p -> nifiFlow.addProcessor(p));
+        processGroupStatus.getConnectionStatus().forEach(c -> nifiFlow.addConnection(c));
+
+        // PortStatus does not have isRemotePort() method but it can be determined via isTransmitting() because it is only set for remote ports
+        processGroupStatus.getInputPortStatus().stream()
+                .filter(port -> port.isTransmitting() != null)
+                .forEach(port -> nifiFlow.addRemoteInputPort(port));
+        processGroupStatus.getOutputPortStatus().stream()
+                .filter(port -> port.isTransmitting() != null)
+                .forEach(port -> nifiFlow.addRemoteOutputPort(port));
 
         // Analyze child ProcessGroups recursively.
         for (ProcessGroupStatus child : processGroupStatus.getProcessGroupStatus()) {
-            analyzeProcessGroup(child, nifiFlow);
+            analyzeProcessGroup(nifiFlow, child);
         }
-
     }
 
     private List<String> getIncomingProcessorsIds(NiFiFlow nifiFlow, List<ConnectionStatus> incomingConnections) {
@@ -105,13 +102,13 @@ public class NiFiFlowAnalyzer {
 
     private void traverse(NiFiFlow nifiFlow, NiFiFlowPath path, String componentId) {
 
-        // If the pid is RootInputPort of the same NiFi instance, then stop traversing to create separate self S2S path.
+        // If the pid is RemoteInputPort of the same NiFi instance, then stop traversing to create separate self S2S path.
         // E.g InputPort -> MergeContent, GenerateFlowFile -> InputPort.
-        if (path.getProcessComponentIds().size() > 0 && nifiFlow.isRootInputPort(componentId)) {
+        if (path.getProcessComponentIds().size() > 0 && nifiFlow.isRemoteInputPort(componentId)) {
             return;
         }
 
-        // Add known inputs/outputs to/from this processor, such as RootGroupIn/Output port
+        // Add known inputs/outputs to/from this processor, such as RemoteGroupIn/Output port
         if (nifiFlow.isProcessComponent(componentId)) {
             path.addProcessor(componentId);
         }
@@ -195,8 +192,9 @@ public class NiFiFlowAnalyzer {
                 })
                 .collect(Collectors.toSet());
 
-        // Use RootInputPorts as headProcessors.
-        headProcessComponents.addAll(nifiFlow.getRootInputPorts().keySet());
+        // Use RemoteInputPorts as headProcessors.
+        final Map<String, PortStatus> remoteInputPorts = nifiFlow.getRemoteInputPorts();
+        headProcessComponents.addAll(remoteInputPorts.keySet());
 
         headProcessComponents.forEach(startPid -> {
             // By using the startPid as its qualifiedName, it's guaranteed that
@@ -208,10 +206,15 @@ public class NiFiFlowAnalyzer {
         });
 
         nifiFlow.getFlowPaths().values().forEach(path -> {
-            if (processors.containsKey(path.getId())) {
-                final ProcessorStatus processor = processors.get(path.getId());
+            final String pathId = path.getId();
+            if (processors.containsKey(pathId)) {
+                final ProcessorStatus processor = processors.get(pathId);
                 path.setGroupId(processor.getGroupId());
+            } else if (remoteInputPorts.containsKey(pathId)) {
+                final PortStatus port = nifiFlow.getRemoteInputPorts().get(pathId);
+                path.setGroupId(port.getGroupId());
             } else {
+                logger.warn("Head component not found for FlowPath ID: {}", pathId);
                 path.setGroupId(rootProcessGroupId);
             }
         });

@@ -223,8 +223,8 @@ public class NiFiAtlasClient implements AutoCloseable {
         nifiFlow.setDescription(toStr(attributes.get(ATTR_DESCRIPTION)));
 
         nifiFlow.getQueues().putAll(fetchFlowComponents(TYPE_NIFI_QUEUE, nifiFlowReferredEntities));
-        nifiFlow.getRootInputPortEntities().putAll(fetchFlowComponents(TYPE_NIFI_INPUT_PORT, nifiFlowReferredEntities));
-        nifiFlow.getRootOutputPortEntities().putAll(fetchFlowComponents(TYPE_NIFI_OUTPUT_PORT, nifiFlowReferredEntities));
+        nifiFlow.getRemoteInputPortEntities().putAll(fetchFlowComponents(TYPE_NIFI_INPUT_PORT, nifiFlowReferredEntities));
+        nifiFlow.getRemoteOutputPortEntities().putAll(fetchFlowComponents(TYPE_NIFI_OUTPUT_PORT, nifiFlowReferredEntities));
 
         final Map<String, NiFiFlowPath> flowPaths = nifiFlow.getFlowPaths();
         final Map<AtlasObjectId, AtlasEntity> flowPathEntities = fetchFlowComponents(TYPE_NIFI_FLOW_PATH, nifiFlowReferredEntities);
@@ -424,10 +424,10 @@ public class NiFiAtlasClient implements AutoCloseable {
                 final Map<AtlasObjectId, AtlasEntity> entityMap;
                 switch (entity.getTypeName()) {
                     case TYPE_NIFI_INPUT_PORT:
-                        entityMap = nifiFlow.getRootInputPortEntities();
+                        entityMap = nifiFlow.getRemoteInputPortEntities();
                         break;
                     case TYPE_NIFI_OUTPUT_PORT:
-                        entityMap = nifiFlow.getRootOutputPortEntities();
+                        entityMap = nifiFlow.getRemoteOutputPortEntities();
                         break;
                     case TYPE_NIFI_QUEUE:
                         entityMap = nifiFlow.getQueues();

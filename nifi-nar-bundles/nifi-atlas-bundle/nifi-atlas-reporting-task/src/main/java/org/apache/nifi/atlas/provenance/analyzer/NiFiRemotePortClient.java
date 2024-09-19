@@ -35,13 +35,13 @@ import static org.apache.nifi.atlas.NiFiTypes.TYPE_NIFI_INPUT_PORT;
 import static org.apache.nifi.atlas.NiFiTypes.TYPE_NIFI_OUTPUT_PORT;
 
 /**
- * Analyze a transit URI as a NiFi Site-to-Site remote input/output port.
+ * Analyze a provenance event as a NiFi Remote Port for Site-to-Site communication at the client side.
  * <li>qualifiedName=remotePortGUID@namespace (example: 35dbc0ab-015e-1000-144c-a8d71255027d@ns1)
  * <li>name=portName (example: input)
  */
-public class NiFiRemotePort extends NiFiS2S {
+public class NiFiRemotePortClient extends NiFiS2S {
 
-    private static final Logger logger = LoggerFactory.getLogger(NiFiRemotePort.class);
+    private static final Logger logger = LoggerFactory.getLogger(NiFiRemotePortClient.class);
 
     @Override
     public DataSetRefs analyze(AnalysisContext context, ProvenanceEventRecord event) {

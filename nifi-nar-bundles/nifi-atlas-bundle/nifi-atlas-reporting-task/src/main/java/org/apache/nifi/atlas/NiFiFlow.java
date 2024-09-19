@@ -86,12 +86,12 @@ public class NiFiFlow {
     private final Map<String, List<ConnectionStatus>> outgoingConnections = new HashMap<>();
 
     private final Map<AtlasObjectId, AtlasEntity> queues = new HashMap<>();
-    // Root Group Ports.
-    private final Map<String, PortStatus> rootInputPorts = new HashMap<>();
-    private final Map<String, PortStatus> rootOutputPorts = new HashMap<>();
-    // Root Group Ports Entity.
-    private final Map<AtlasObjectId, AtlasEntity> rootInputPortEntities = new HashMap<>();
-    private final Map<AtlasObjectId, AtlasEntity> rootOutputPortEntities = new HashMap<>();
+    // Remote Ports.
+    private final Map<String, PortStatus> remoteInputPorts = new HashMap<>();
+    private final Map<String, PortStatus> remoteOutputPorts = new HashMap<>();
+    // Remote Ports Entity.
+    private final Map<AtlasObjectId, AtlasEntity> remoteInputPortEntities = new HashMap<>();
+    private final Map<AtlasObjectId, AtlasEntity> remoteOutputPortEntities = new HashMap<>();
 
 
     public NiFiFlow(String rootProcessGroupId) {
@@ -193,30 +193,30 @@ public class NiFiFlow {
         return outgoingConnections.get(componentId);
     }
 
-    public void addRootInputPort(PortStatus port) {
-        rootInputPorts.put(port.getId(), port);
-        createOrUpdateRootGroupPortEntity(true, toQualifiedName(port.getId()), port.getName());
+    public void addRemoteInputPort(PortStatus port) {
+        remoteInputPorts.put(port.getId(), port);
+        createOrUpdateRemotePortEntity(true, toQualifiedName(port.getId()), port.getName());
     }
 
-    public Map<String, PortStatus> getRootInputPorts() {
-        return rootInputPorts;
+    public Map<String, PortStatus> getRemoteInputPorts() {
+        return remoteInputPorts;
     }
 
-    public void addRootOutputPort(PortStatus port) {
-        rootOutputPorts.put(port.getId(), port);
-        createOrUpdateRootGroupPortEntity(false, toQualifiedName(port.getId()), port.getName());
+    public void addRemoteOutputPort(PortStatus port) {
+        remoteOutputPorts.put(port.getId(), port);
+        createOrUpdateRemotePortEntity(false, toQualifiedName(port.getId()), port.getName());
     }
 
-    public Map<String, PortStatus> getRootOutputPorts() {
-        return rootOutputPorts;
+    public Map<String, PortStatus> getRemoteOutputPorts() {
+        return remoteOutputPorts;
     }
 
-    public Map<AtlasObjectId, AtlasEntity> getRootInputPortEntities() {
-        return rootInputPortEntities;
+    public Map<AtlasObjectId, AtlasEntity> getRemoteInputPortEntities() {
+        return remoteInputPortEntities;
     }
 
-    private AtlasEntity createOrUpdateRootGroupPortEntity(boolean isInput, String qualifiedName, String portName) {
-        final Map<AtlasObjectId, AtlasEntity> ports = isInput ? rootInputPortEntities : rootOutputPortEntities;
+    private AtlasEntity createOrUpdateRemotePortEntity(boolean isInput, String qualifiedName, String portName) {
+        final Map<AtlasObjectId, AtlasEntity> ports = isInput ? remoteInputPortEntities : remoteOutputPortEntities;
         final Optional<AtlasObjectId> existingPortId = findIdByQualifiedName(ports.keySet(), qualifiedName);
 
         final String typeName = isInput ? TYPE_NIFI_INPUT_PORT : TYPE_NIFI_OUTPUT_PORT;
@@ -247,8 +247,8 @@ public class NiFiFlow {
         }
     }
 
-    public Map<AtlasObjectId, AtlasEntity> getRootOutputPortEntities() {
-        return rootOutputPortEntities;
+    public Map<AtlasObjectId, AtlasEntity> getRemoteOutputPortEntities() {
+        return remoteOutputPortEntities;
     }
 
     public Tuple<AtlasObjectId, AtlasEntity> getOrCreateQueue(String destinationComponentId) {
@@ -295,19 +295,19 @@ public class NiFiFlow {
      * Determine if a component should be reported as NiFiFlowPath.
      */
     public boolean isProcessComponent(String componentId) {
-        return isProcessor(componentId) || isRootInputPort(componentId) || isRootOutputPort(componentId);
+        return isProcessor(componentId) || isRemoteInputPort(componentId) || isRemoteOutputPort(componentId);
     }
 
     public boolean isProcessor(String componentId) {
         return processors.containsKey(componentId);
     }
 
-    public boolean isRootInputPort(String componentId) {
-        return rootInputPorts.containsKey(componentId);
+    public boolean isRemoteInputPort(String componentId) {
+        return remoteInputPorts.containsKey(componentId);
     }
 
-    public boolean isRootOutputPort(String componentId) {
-        return rootOutputPorts.containsKey(componentId);
+    public boolean isRemoteOutputPort(String componentId) {
+        return remoteOutputPorts.containsKey(componentId);
     }
 
     public String getProcessComponentName(String componentId) {
@@ -316,8 +316,8 @@ public class NiFiFlow {
 
     public String getProcessComponentName(String componentId, Supplier<String> unknown) {
         return isProcessor(componentId) ? getProcessors().get(componentId).getName()
-                : isRootInputPort(componentId) ? getRootInputPorts().get(componentId).getName()
-                : isRootOutputPort(componentId) ? getRootOutputPorts().get(componentId).getName() : unknown.get();
+                : isRemoteInputPort(componentId) ? getRemoteInputPorts().get(componentId).getName()
+                : isRemoteOutputPort(componentId) ? getRemoteOutputPorts().get(componentId).getName() : unknown.get();
     }
 
     /**
@@ -363,7 +363,7 @@ public class NiFiFlow {
 
     public Map<EntityChangeType, List<AtlasEntity>> getChangedDataSetEntities() {
         final Map<EntityChangeType, List<AtlasEntity>> changedEntities = Stream
-                .of(rootInputPortEntities.values().stream(), rootOutputPortEntities.values().stream(), queues.values().stream())
+                .of(remoteInputPortEntities.values().stream(), remoteOutputPortEntities.values().stream(), queues.values().stream())
                 .flatMap(Function.identity())
                 .collect(Collectors.groupingBy(entity -> getEntityChangeType(entity.getGuid())));
         updateAudit.add("CREATED DataSet entities=" + changedEntities.get(EntityChangeType.CREATED));

@@ -14,8 +14,8 @@
 # limitations under the License.
 
 # By component type:
-org.apache.nifi.atlas.provenance.analyzer.NiFiRemotePort
-org.apache.nifi.atlas.provenance.analyzer.NiFiRootGroupPort
+org.apache.nifi.atlas.provenance.analyzer.NiFiRemotePortClient
+org.apache.nifi.atlas.provenance.analyzer.NiFiRemotePortServer
 org.apache.nifi.atlas.provenance.analyzer.KafkaTopic
 org.apache.nifi.atlas.provenance.analyzer.PutHiveStreaming
 

@@ -34,13 +34,13 @@ import static org.apache.nifi.atlas.NiFiTypes.TYPE_NIFI_INPUT_PORT;
 import static org.apache.nifi.atlas.NiFiTypes.TYPE_NIFI_OUTPUT_PORT;
 
 /**
- * Analyze a provenance event as a NiFi RootGroupPort for Site-to-Site communication at the server side.
+ * Analyze a provenance event as a NiFi Remote Port for Site-to-Site communication at the server side.
  * <li>qualifiedName=rootPortGUID (example: 35dbc0ab-015e-1000-144c-a8d71255027d)
  * <li>name=portName (example: input)
  */
-public class NiFiRootGroupPort extends NiFiS2S {
+public class NiFiRemotePortServer extends NiFiS2S {
 
-    private static final Logger logger = LoggerFactory.getLogger(NiFiRootGroupPort.class);
+    private static final Logger logger = LoggerFactory.getLogger(NiFiRemotePortServer.class);
 
     @Override
     public DataSetRefs analyze(AnalysisContext context, ProvenanceEventRecord event) {
@@ -52,14 +52,14 @@ public class NiFiRootGroupPort extends NiFiS2S {
 
         final boolean isInputPort = event.getComponentType().equals("Input Port");
         final String type = isInputPort ? TYPE_NIFI_INPUT_PORT : TYPE_NIFI_OUTPUT_PORT;
-        final String rootPortId = event.getComponentId();
+        final String remotePortId = event.getComponentId();
 
         final S2SPort s2SPort = analyzeS2SPort(event, context.getNamespaceResolver());
 
         // Find connections connecting to/from the remote port.
         final List<ConnectionStatus> connections = isInputPort
-                ? context.findConnectionFrom(rootPortId)
-                : context.findConnectionTo(rootPortId);
+                ? context.findConnectionFrom(remotePortId)
+                : context.findConnectionTo(remotePortId);
         if (connections == null || connections.isEmpty()) {
             logger.warn("Connection was not found: {}", event);
             return null;
@@ -69,7 +69,7 @@ public class NiFiRootGroupPort extends NiFiS2S {
         final ConnectionStatus connection = connections.get(0);
         final AtlasEntity entity = new AtlasEntity(type);
         entity.setAttribute(ATTR_NAME, isInputPort ? connection.getSourceName() : connection.getDestinationName());
-        entity.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(s2SPort.namespace, rootPortId));
+        entity.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(s2SPort.namespace, remotePortId));
 
         return singleDataSetRef(event.getComponentId(), event.getEventType(), entity);
     }

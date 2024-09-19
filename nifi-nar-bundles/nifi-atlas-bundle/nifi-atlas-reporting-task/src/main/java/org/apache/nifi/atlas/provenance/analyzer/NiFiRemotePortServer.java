@@ -20,7 +20,6 @@ import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.controller.status.ConnectionStatus;
-import org.apache.nifi.flowfile.attributes.SiteToSiteAttributes;
 import org.apache.nifi.provenance.ProvenanceEventRecord;
 import org.apache.nifi.provenance.ProvenanceEventType;
 import org.slf4j.Logger;
@@ -35,13 +34,13 @@ import static org.apache.nifi.atlas.NiFiTypes.TYPE_NIFI_INPUT_PORT;
 import static org.apache.nifi.atlas.NiFiTypes.TYPE_NIFI_OUTPUT_PORT;
 
 /**
- * Analyze a transit URI as a NiFi Site-to-Site remote input/output port.
- * <li>qualifiedName=remotePortGUID@namespace (example: 35dbc0ab-015e-1000-144c-a8d71255027d@ns1)
+ * Analyze a provenance event as a NiFi Remote Port for Site-to-Site communication at the server side.
+ * <li>qualifiedName=remotePortID (example: 35dbc0ab-015e-1000-144c-a8d71255027d)
  * <li>name=portName (example: input)
  */
-public class NiFiRemotePort extends NiFiS2S {
+public class NiFiRemotePortServer extends NiFiS2S {
 
-    private static final Logger logger = LoggerFactory.getLogger(NiFiRemotePort.class);
+    private static final Logger logger = LoggerFactory.getLogger(NiFiRemotePortServer.class);
 
     @Override
     public DataSetRefs analyze(AnalysisContext context, ProvenanceEventRecord event) {
@@ -51,37 +50,37 @@ public class NiFiRemotePort extends NiFiS2S {
             return null;
         }
 
-        final boolean isRemoteInputPort = event.getComponentType().equals("Remote Input Port");
-        final String type = isRemoteInputPort ? TYPE_NIFI_INPUT_PORT : TYPE_NIFI_OUTPUT_PORT;
+        final boolean isInputPort = event.getComponentType().equals("Input Port");
+        final String type = isInputPort ? TYPE_NIFI_INPUT_PORT : TYPE_NIFI_OUTPUT_PORT;
+        final String remotePortId = event.getComponentId();
 
         final S2SPort s2SPort = analyzeS2SPort(event, context.getNamespaceResolver());
 
-        // Find connections that connects to/from the remote port.
-        final String componentId = event.getComponentId();
-        final List<ConnectionStatus> connections = isRemoteInputPort
-                ? context.findConnectionTo(componentId)
-                : context.findConnectionFrom(componentId);
+        // Find connections connecting to/from the remote port.
+        final List<ConnectionStatus> connections = isInputPort
+                ? context.findConnectionFrom(remotePortId)
+                : context.findConnectionTo(remotePortId);
         if (connections == null || connections.isEmpty()) {
             logger.warn("Connection was not found: {}", event);
             return null;
         }
 
-        // The name of remote port can be retrieved from any connection, use the first one.
+        // The name of the port can be retrieved from any connection, use the first one.
         final ConnectionStatus connection = connections.get(0);
         final AtlasEntity entity = new AtlasEntity(type);
-        entity.setAttribute(ATTR_NAME, isRemoteInputPort ? connection.getDestinationName() : connection.getSourceName());
-        entity.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(s2SPort.namespace, s2SPort.targetPortId));
+        entity.setAttribute(ATTR_NAME, isInputPort ? connection.getSourceName() : connection.getDestinationName());
+        entity.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(s2SPort.namespace, remotePortId));
 
         return singleDataSetRef(event.getComponentId(), event.getEventType(), entity);
     }
 
     @Override
     public String targetComponentTypePattern() {
-        return "^Remote (In|Out)put Port$";
+        return "^(In|Out)put Port$";
     }
 
     @Override
     protected String getRawProtocolPortId(ProvenanceEventRecord event) {
-        return event.getAttribute(SiteToSiteAttributes.S2S_PORT_ID.key());
+        return event.getComponentId();
     }
 }

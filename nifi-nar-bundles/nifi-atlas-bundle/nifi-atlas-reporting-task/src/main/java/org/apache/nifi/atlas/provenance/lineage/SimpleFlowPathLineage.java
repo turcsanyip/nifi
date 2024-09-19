@@ -45,6 +45,7 @@ public class SimpleFlowPathLineage extends AbstractLineageStrategy {
         }
 
         if ("Remote Input Port".equals(event.getComponentType()) || "Remote Output Port".equals(event.getComponentType())) {
+            // handling the client side of the S2S connection (not where the Remote Port component resides)
             processRemotePortEvent(analysisContext, lineageContext, nifiFlow, event, refs);
         } else {
             addDataSetRefs(lineageContext, nifiFlow, refs);

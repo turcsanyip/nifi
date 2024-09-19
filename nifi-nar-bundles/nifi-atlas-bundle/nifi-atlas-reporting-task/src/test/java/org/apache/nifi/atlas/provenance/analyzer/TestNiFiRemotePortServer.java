@@ -45,7 +45,7 @@ import static org.mockito.Mockito.when;
  * Tests for RootGroupPorts.
  * More complex and detailed tests are available at {@link ITReportLineageToAtlas}.
  */
-public class TestNiFiRootGroupPort {
+public class TestNiFiRemotePortServer {
 
     @Test
     public void testInputPortHTTP() {

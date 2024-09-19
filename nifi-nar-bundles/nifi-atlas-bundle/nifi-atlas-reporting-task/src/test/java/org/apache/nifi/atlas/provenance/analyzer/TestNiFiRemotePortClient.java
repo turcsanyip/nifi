@@ -46,7 +46,7 @@ import static org.mockito.Mockito.when;
  * Tests for RemotePorts.
  * More complex and detailed tests are available at {@link ITReportLineageToAtlas}.
  */
-public class TestNiFiRemotePort {
+public class TestNiFiRemotePortClient {
 
     @Test
     public void testRemoteInputPortHTTP() {

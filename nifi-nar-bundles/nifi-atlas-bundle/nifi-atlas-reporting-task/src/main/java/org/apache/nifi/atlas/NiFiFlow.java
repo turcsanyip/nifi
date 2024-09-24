@@ -62,7 +62,7 @@ public class NiFiFlow {
     private static final Logger logger = LoggerFactory.getLogger(NiFiFlow.class);
 
     private final String rootProcessGroupId;
-    private String flowName;
+    private String name;
     private String namespace;
     private String url;
     private String atlasGuid;
@@ -154,13 +154,13 @@ public class NiFiFlow {
         return processors;
     }
 
-    public void setFlowName(String flowName) {
-        updateMetadata(metadataUpdated, updateAudit, ATTR_NAME, this.flowName, flowName);
-        this.flowName = flowName;
+    public void setName(String name) {
+        updateMetadata(metadataUpdated, updateAudit, ATTR_NAME, this.name, name);
+        this.name = name;
     }
 
-    public String getFlowName() {
-        return flowName;
+    public String getName() {
+        return name;
     }
 
     public void setUrl(String url) {

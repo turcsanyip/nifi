@@ -216,7 +216,7 @@ public class NiFiAtlasClient implements AutoCloseable {
         final Map<String, Object> attributes = nifiFlowEntity.getAttributes();
         final NiFiFlow nifiFlow = new NiFiFlow(rootProcessGroupId);
         nifiFlow.setAtlasEntity(nifiFlowEntity);
-        nifiFlow.setFlowName(toStr(attributes.get(ATTR_NAME)));
+        nifiFlow.setName(toStr(attributes.get(ATTR_NAME)));
         nifiFlow.setNamespace(namespace);
         nifiFlow.setUrl(toStr(attributes.get(ATTR_URL)));
 
@@ -377,7 +377,7 @@ public class NiFiAtlasClient implements AutoCloseable {
         final AtlasEntity flowEntity = nifiFlow.getAtlasEntity() != null ? new AtlasEntity(nifiFlow.getAtlasEntity()) : new AtlasEntity();
         flowEntity.setTypeName(TYPE_NIFI_FLOW);
         flowEntity.setVersion(1L);
-        flowEntity.setAttribute(ATTR_NAME, nifiFlow.getFlowName());
+        flowEntity.setAttribute(ATTR_NAME, nifiFlow.getName());
         flowEntity.setAttribute(ATTR_QUALIFIED_NAME, nifiFlow.toQualifiedName(nifiFlow.getRootProcessGroupId()));
         flowEntity.setAttribute(ATTR_URL, nifiFlow.getUrl());
 

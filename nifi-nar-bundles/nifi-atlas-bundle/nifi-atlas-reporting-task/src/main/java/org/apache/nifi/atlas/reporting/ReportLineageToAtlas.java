@@ -779,9 +779,9 @@ public class ReportLineageToAtlas extends AbstractReportingTask {
         }
 
         final NiFiFlow nifiFlow = existingNiFiFlow != null ? existingNiFiFlow : new NiFiFlow(rootProcessGroup.getId());
-        nifiFlow.setFlowName(flowName);
-        nifiFlow.setUrl(nifiUrl);
+        nifiFlow.setName(flowName);
         nifiFlow.setNamespace(namespace);
+        nifiFlow.setUrl(nifiUrl);
 
         final NiFiFlowAnalyzer flowAnalyzer = new NiFiFlowAnalyzer();
 

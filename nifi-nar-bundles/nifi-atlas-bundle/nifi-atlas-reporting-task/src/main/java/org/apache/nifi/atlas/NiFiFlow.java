@@ -68,7 +68,6 @@ public class NiFiFlow {
     private String atlasGuid;
     private AtlasEntity atlasEntity;
     private AtlasObjectId atlasObjectId;
-    private String description;
 
     /**
      * Track whether this instance has metadata updated and should be updated in Atlas.
@@ -140,15 +139,6 @@ public class NiFiFlow {
 
     public String getQualifiedName() {
         return toQualifiedName(rootProcessGroupId);
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        updateMetadata(metadataUpdated, updateAudit, ATTR_DESCRIPTION, this.description, description);
-        this.description = description;
     }
 
     public void addConnection(ConnectionStatus c) {

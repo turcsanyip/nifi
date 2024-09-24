@@ -65,7 +65,6 @@ import static org.apache.nifi.atlas.NiFiFlow.EntityChangeType.AS_IS;
 import static org.apache.nifi.atlas.NiFiFlow.EntityChangeType.CREATED;
 import static org.apache.nifi.atlas.NiFiFlow.EntityChangeType.DELETED;
 import static org.apache.nifi.atlas.NiFiFlow.EntityChangeType.UPDATED;
-import static org.apache.nifi.atlas.NiFiTypes.ATTR_DESCRIPTION;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_FLOW_PATHS;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_GUID;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_INPUTS;
@@ -220,7 +219,6 @@ public class NiFiAtlasClient implements AutoCloseable {
         nifiFlow.setFlowName(toStr(attributes.get(ATTR_NAME)));
         nifiFlow.setNamespace(namespace);
         nifiFlow.setUrl(toStr(attributes.get(ATTR_URL)));
-        nifiFlow.setDescription(toStr(attributes.get(ATTR_DESCRIPTION)));
 
         nifiFlow.getQueues().putAll(fetchFlowComponents(TYPE_NIFI_QUEUE, nifiFlowReferredEntities));
         nifiFlow.getRemoteInputPortEntities().putAll(fetchFlowComponents(TYPE_NIFI_INPUT_PORT, nifiFlowReferredEntities));
@@ -382,7 +380,6 @@ public class NiFiAtlasClient implements AutoCloseable {
         flowEntity.setAttribute(ATTR_NAME, nifiFlow.getFlowName());
         flowEntity.setAttribute(ATTR_QUALIFIED_NAME, nifiFlow.toQualifiedName(nifiFlow.getRootProcessGroupId()));
         flowEntity.setAttribute(ATTR_URL, nifiFlow.getUrl());
-        flowEntity.setAttribute(ATTR_DESCRIPTION, nifiFlow.getDescription());
 
         // If flowEntity is not persisted yet, then store nifi_flow entity to make nifiFlowId available for other entities.
         if (flowEntity.getGuid().startsWith("-")) {

@@ -66,7 +66,7 @@ public class NiFiFlowAnalyzer {
             // Ignore self relationship.
             final String sourceId = c.getSourceId();
             if (!sourceId.equals(c.getDestinationId())) {
-                if (nifiFlow.isProcessor(sourceId)) {
+                if (nifiFlow.isProcessComponent(sourceId)) {
                     ids.add(sourceId);
                 } else {
                     ids.addAll(getIncomingProcessorsIds(nifiFlow, nifiFlow.getIncomingConnections(sourceId)));

@@ -73,7 +73,7 @@ public class SimpleFlowPathLineage extends AbstractLineageStrategy {
 
         final NiFiFlowPath remotePortProcess = new NiFiFlowPath(portProcessId);
         remotePortProcess.setName(event.getComponentType());
-        remotePortProcess.addProcessor(portProcessId);
+        remotePortProcess.addProcessComponent(portProcessId);
 
         // For RemoteInputPort, need to find the previous component connected to this port,
         // which passed this particular FlowFile.

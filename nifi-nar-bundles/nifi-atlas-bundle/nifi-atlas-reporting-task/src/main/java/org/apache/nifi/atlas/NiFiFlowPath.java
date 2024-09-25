@@ -84,7 +84,7 @@ public class NiFiFlowPath implements AtlasProcess {
         this.groupId = groupId;
     }
 
-    public void addProcessor(String processorId) {
+    public void addProcessComponent(String processorId) {
         processComponentIds.add(processorId);
     }
 

@@ -241,14 +241,14 @@ public class NiFiFlow {
         return remoteOutputPortEntities;
     }
 
-    public Tuple<AtlasObjectId, AtlasEntity> getOrCreateQueue(String destinationComponentId) {
+    public AtlasObjectId getOrCreateQueue(String destinationComponentId) {
         final String qualifiedName = toQualifiedName(destinationComponentId);
         final Optional<AtlasObjectId> existingQueueId = findIdByQualifiedName(queues.keySet(), qualifiedName);
 
         if (existingQueueId.isPresent()) {
             final AtlasEntity entity = queues.get(existingQueueId.get());
             stillExistingEntityGuids.add(entity.getGuid());
-            return new Tuple<>(existingQueueId.get(), entity);
+            return existingQueueId.get();
         } else {
             final AtlasObjectId queueId = new AtlasObjectId(TYPE_NIFI_QUEUE, ATTR_QUALIFIED_NAME, qualifiedName);
             final AtlasEntity queue = new AtlasEntity(TYPE_NIFI_QUEUE);
@@ -257,7 +257,7 @@ public class NiFiFlow {
             queue.setAttribute(ATTR_NAME, "queue");
             queue.setAttribute(ATTR_DESCRIPTION, "Input queue for " + destinationComponentId);
             queues.put(queueId, queue);
-            return new Tuple<>(queueId, queue);
+            return queueId;
         }
     }
 

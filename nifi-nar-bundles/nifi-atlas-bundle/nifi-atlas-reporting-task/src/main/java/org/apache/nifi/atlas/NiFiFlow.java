@@ -456,7 +456,7 @@ public class NiFiFlow {
 
         // If references are changed, update it.
         if (path.isDataSetReferenceChanged(remainingFlowPathIOIds, isInput)) {
-            pathEntity.setAttribute(targetAttribute, remainingFlowPathIOIds);
+            pathEntity.setRelationshipAttribute(targetAttribute, remainingFlowPathIOIds);
             return true;
         }
         return false;

@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -72,11 +72,11 @@ public class NiFiFlow {
     /**
      * Track whether this instance has metadata updated and should be updated in Atlas.
      */
-    private AtomicBoolean metadataUpdated = new AtomicBoolean(false);
-    private List<String> updateAudit = new ArrayList<>();
-    private Set<String> updatedEntityGuids = new LinkedHashSet<>();
-    private Set<String> stillExistingEntityGuids = new LinkedHashSet<>();
-    private Set<String> traversedPathIds = new LinkedHashSet<>();
+    private final AtomicBoolean metadataUpdated = new AtomicBoolean(false);
+    private final List<String> updateAudit = new ArrayList<>();
+    private final Set<String> updatedEntityGuids = new HashSet<>();
+    private final Set<String> stillExistingEntityGuids = new HashSet<>();
+    private final Set<String> traversedPathIds = new HashSet<>();
     private boolean urlUpdated = false;
 
     private final Map<String, NiFiFlowPath> flowPaths = new HashMap<>();

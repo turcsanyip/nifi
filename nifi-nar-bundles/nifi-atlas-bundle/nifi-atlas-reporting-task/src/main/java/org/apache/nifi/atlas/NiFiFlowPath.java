@@ -44,8 +44,8 @@ public class NiFiFlowPath implements AtlasProcess {
 
     private AtlasEntity atlasEntity;
 
-    private AtomicBoolean metadataUpdated = new AtomicBoolean(false);
-    private List<String> updateAudit = new ArrayList<>();
+    private final AtomicBoolean metadataUpdated = new AtomicBoolean(false);
+    private final List<String> updateAudit = new ArrayList<>();
     private Set<String> existingInputGuids;
     private Set<String> existingOutputGuids;
 

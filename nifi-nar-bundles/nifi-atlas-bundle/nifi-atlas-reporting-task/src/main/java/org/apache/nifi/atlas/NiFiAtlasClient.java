@@ -194,7 +194,7 @@ public class NiFiAtlasClient implements AutoCloseable {
         return typeDefs;
     }
 
-    private Pattern FLOW_PATH_URL_PATTERN = Pattern.compile("^http.+processGroupId=([0-9a-z\\-]+).*$");
+    private static final Pattern FLOW_PATH_URL_PATTERN = Pattern.compile("^http.+processGroupId=([0-9a-z\\-]+).*$");
     /**
      * Fetch existing NiFiFlow entity from Atlas.
      * @param rootProcessGroupId The id of a NiFi flow root process group.
@@ -308,12 +308,12 @@ public class NiFiAtlasClient implements AutoCloseable {
         final Map<String, List<AtlasEntity>> updatedDataSetEntities = registerDataSetEntities(nifiFlow);
 
         // Create path entities.
-        final Set<AtlasObjectId> remainingPathIds = registerFlowPathEntities(nifiFlow);
+        final Set<AtlasObjectId> updatedPathIds = registerFlowPathEntities(nifiFlow);
 
         // Update these attributes only if anything is created, updated or removed.
         boolean shouldUpdateNiFiFlow = nifiFlow.isMetadataUpdated();
-        if (remainingPathIds != null) {
-            flowEntity.setAttribute(ATTR_FLOW_PATHS, remainingPathIds);
+        if (updatedPathIds != null) {
+            flowEntity.setAttribute(ATTR_FLOW_PATHS, updatedPathIds);
             shouldUpdateNiFiFlow = true;
         }
         if (updatedDataSetEntities.containsKey(TYPE_NIFI_QUEUE)) {
@@ -341,11 +341,9 @@ public class NiFiAtlasClient implements AutoCloseable {
 
         if (shouldUpdateNiFiFlow) {
             // Send updated entities.
-            final List<AtlasEntity> entities = new ArrayList<>();
-            final AtlasEntity.AtlasEntitiesWithExtInfo atlasEntities = new AtlasEntity.AtlasEntitiesWithExtInfo(entities);
-            entities.add(flowEntity);
+            final AtlasEntity.AtlasEntityWithExtInfo atlasEntityExt = new AtlasEntity.AtlasEntityWithExtInfo(flowEntity);
             try {
-                final EntityMutationResponse mutationResponse = atlasClient.createEntities(atlasEntities);
+                final EntityMutationResponse mutationResponse = atlasClient.createEntity(atlasEntityExt);
                 logger.debug("mutation response={}", mutationResponse);
             } catch (AtlasServiceException e) {
                 if (e.getStatus().getStatusCode() == AtlasErrorCode.INSTANCE_NOT_FOUND.getHttpCode().getStatusCode()
@@ -367,9 +365,6 @@ public class NiFiAtlasClient implements AutoCloseable {
     }
 
     private AtlasEntity registerNiFiFlowEntity(final NiFiFlow nifiFlow) throws AtlasServiceException {
-        final List<AtlasEntity> entities = new ArrayList<>();
-        final AtlasEntity.AtlasEntitiesWithExtInfo atlasEntities = new AtlasEntity.AtlasEntitiesWithExtInfo(entities);
-
         if (!nifiFlow.isMetadataUpdated()) {
             // Nothing has been changed, return existing entity.
             return nifiFlow.getAtlasEntity();
@@ -384,9 +379,9 @@ public class NiFiAtlasClient implements AutoCloseable {
         flowEntity.setAttribute(ATTR_URL, nifiFlow.getUrl());
 
         // If flowEntity is not persisted yet, then store nifi_flow entity to make nifiFlowId available for other entities.
-        if (flowEntity.getGuid().startsWith("-")) {
-            entities.add(flowEntity);
-            final EntityMutationResponse mutationResponse = atlasClient.createEntities(atlasEntities);
+        if (!AtlasUtils.isGuidAssigned(flowEntity.getGuid())) {
+            final AtlasEntity.AtlasEntityWithExtInfo atlasEntityExt = new AtlasEntity.AtlasEntityWithExtInfo(flowEntity);
+            final EntityMutationResponse mutationResponse = atlasClient.createEntity(atlasEntityExt);
             logger.debug("Registered a new nifi_flow entity, mutation response={}", mutationResponse);
             final String assignedNiFiFlowGuid = mutationResponse.getGuidAssignments().get(flowEntity.getGuid());
             flowEntity.setGuid(assignedNiFiFlowGuid);
@@ -452,7 +447,8 @@ public class NiFiAtlasClient implements AutoCloseable {
         }
 
         final Set<String> changedTypeNames = changedEntities.entrySet().stream()
-                .filter(entry -> !AS_IS.equals(entry.getKey())).flatMap(entry -> entry.getValue().stream())
+                .filter(entry -> !AS_IS.equals(entry.getKey()))
+                .flatMap(entry -> entry.getValue().stream())
                 .map(AtlasEntity::getTypeName)
                 .collect(Collectors.toSet());
 
@@ -504,7 +500,8 @@ public class NiFiAtlasClient implements AutoCloseable {
 
         if (NiFiFlow.EntityChangeType.containsChange(changedEntities.keySet())) {
             return changedEntities.entrySet().stream()
-                    .filter(entry -> !DELETED.equals(entry.getKey())).flatMap(entry -> entry.getValue().stream())
+                    .filter(entry -> !DELETED.equals(entry.getKey()))
+                    .flatMap(entry -> entry.getValue().stream())
                     .map(path -> new AtlasObjectId(path.getGuid(), TYPE_NIFI_FLOW_PATH,
                             Collections.singletonMap(ATTR_QUALIFIED_NAME, getQualifiedName(path))))
                     .collect(Collectors.toSet());

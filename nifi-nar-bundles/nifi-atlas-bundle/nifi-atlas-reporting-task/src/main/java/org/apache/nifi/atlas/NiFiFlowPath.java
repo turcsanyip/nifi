@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import static org.apache.nifi.atlas.AtlasUtils.getTypedQualifiedName;
 import static org.apache.nifi.atlas.AtlasUtils.updateMetadata;
+import static org.apache.nifi.atlas.NiFiTypes.ATTR_DESCRIPTION;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_NAME;
 
 public class NiFiFlowPath implements AtlasProcess {
@@ -38,6 +39,7 @@ public class NiFiFlowPath implements AtlasProcess {
     private final Set<AtlasObjectId> outputs = new HashSet<>();
 
     private String name;
+    private String description;
     private String groupId;
 
     private AtlasEntity atlasEntity;
@@ -73,6 +75,15 @@ public class NiFiFlowPath implements AtlasProcess {
     public void setName(String name) {
         updateMetadata(metadataUpdated, updateAudit, ATTR_NAME, this.name, name);
         this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        updateMetadata(metadataUpdated, updateAudit, ATTR_DESCRIPTION, this.description, description);
+        this.description = description;
     }
 
     public String getGroupId() {

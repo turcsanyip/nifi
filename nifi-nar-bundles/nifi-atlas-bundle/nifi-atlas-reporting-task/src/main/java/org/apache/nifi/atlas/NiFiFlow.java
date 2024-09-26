@@ -407,23 +407,8 @@ public class NiFiFlow {
         entity.setTypeName(TYPE_NIFI_FLOW_PATH);
         entity.setVersion(1L);
         entity.setAttribute(ATTR_NIFI_FLOW, getAtlasObjectId());
-
-        final StringBuilder name = new StringBuilder();
-        final StringBuilder description = new StringBuilder();
-        path.getProcessComponentIds().forEach(pid -> {
-            final String componentName = getProcessComponentName(pid);
-
-            if (name.length() > 0) {
-                name.append(", ");
-                description.append(", ");
-            }
-            name.append(componentName);
-            description.append(String.format("%s::%s", componentName, pid));
-        });
-
-        path.setName(name.toString());
-        entity.setAttribute(ATTR_NAME, name.toString());
-        entity.setAttribute(ATTR_DESCRIPTION, description.toString());
+        entity.setAttribute(ATTR_NAME, path.getName());
+        entity.setAttribute(ATTR_DESCRIPTION, path.getDescription());
 
         // Use first processor's id as qualifiedName.
         entity.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(path.getId()));

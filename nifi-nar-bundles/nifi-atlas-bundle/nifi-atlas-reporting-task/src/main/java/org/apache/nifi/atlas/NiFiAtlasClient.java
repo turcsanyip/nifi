@@ -65,6 +65,7 @@ import static org.apache.nifi.atlas.NiFiFlow.EntityChangeType.AS_IS;
 import static org.apache.nifi.atlas.NiFiFlow.EntityChangeType.CREATED;
 import static org.apache.nifi.atlas.NiFiFlow.EntityChangeType.DELETED;
 import static org.apache.nifi.atlas.NiFiFlow.EntityChangeType.UPDATED;
+import static org.apache.nifi.atlas.NiFiTypes.ATTR_DESCRIPTION;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_FLOW_PATHS;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_GUID;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_INPUTS;
@@ -238,6 +239,7 @@ public class NiFiAtlasClient implements AutoCloseable {
             }
             flowPath.setAtlasEntity(flowPathEntity);
             flowPath.setName(toStr(flowPathEntity.getAttribute(ATTR_NAME)));
+            flowPath.setDescription(toStr(flowPathEntity.getAttribute(ATTR_DESCRIPTION)));
             flowPath.getInputs().addAll(toAtlasObjectIds(flowPathEntity.getRelationshipAttribute(ATTR_INPUTS)));
             flowPath.getOutputs().addAll(toAtlasObjectIds(flowPathEntity.getRelationshipAttribute(ATTR_OUTPUTS)));
             flowPath.startTrackingChanges(nifiFlow);

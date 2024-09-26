@@ -184,7 +184,24 @@ public class NiFiFlowAnalyzer {
             traverse(nifiFlow, path, headComponentId);
         });
 
+        // set flow path attributes: name, description, groupId
         nifiFlow.getFlowPaths().values().forEach(path -> {
+            final StringBuilder name = new StringBuilder();
+            final StringBuilder description = new StringBuilder();
+            path.getProcessComponentIds().forEach(componentId -> {
+                final String componentName = nifiFlow.getProcessComponentName(componentId);
+
+                if (name.length() > 0) {
+                    name.append(", ");
+                    description.append(", ");
+                }
+                name.append(componentName);
+                description.append(String.format("%s::%s", componentName, componentId));
+            });
+
+            path.setName(name.toString());
+            path.setDescription(description.toString());
+
             final String pathId = path.getId();
             if (processors.containsKey(pathId)) {
                 final ProcessorStatus processor = processors.get(pathId);

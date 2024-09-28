@@ -62,8 +62,9 @@ public class NiFiFlow {
     private static final Logger logger = LoggerFactory.getLogger(NiFiFlow.class);
 
     private final String rootProcessGroupId;
+    private final String namespace;
+
     private String name;
-    private String namespace;
     private String url;
     private String atlasGuid;
     private AtlasEntity atlasEntity;
@@ -92,8 +93,11 @@ public class NiFiFlow {
     private final Map<AtlasObjectId, AtlasEntity> remoteOutputPortEntities = new HashMap<>();
 
 
-    public NiFiFlow(String rootProcessGroupId) {
+    public NiFiFlow(String rootProcessGroupId, String namespace) {
         this.rootProcessGroupId = rootProcessGroupId;
+        this.namespace = namespace;
+
+        atlasObjectId = new AtlasObjectId(TYPE_NIFI_FLOW, ATTR_QUALIFIED_NAME, getQualifiedName());
     }
 
     public AtlasObjectId getAtlasObjectId() {
@@ -108,23 +112,13 @@ public class NiFiFlow {
         return namespace;
     }
 
-    public void setNamespace(String namespace) {
-        updateMetadata(metadataUpdated, updateAudit, "namespace", this.namespace, namespace);
-        this.namespace = namespace;
-        atlasObjectId = createAtlasObjectId();
-    }
-
-    private AtlasObjectId createAtlasObjectId() {
-        return new AtlasObjectId(atlasGuid, TYPE_NIFI_FLOW, Collections.singletonMap(ATTR_QUALIFIED_NAME, getQualifiedName()));
-    }
-
     public AtlasEntity getAtlasEntity() {
         return atlasEntity;
     }
 
     public void setAtlasEntity(AtlasEntity atlasEntity) {
         this.atlasEntity = atlasEntity;
-        this.setAtlasGuid(atlasEntity.getGuid());
+        setAtlasGuid(atlasEntity.getGuid());
     }
 
     public String getAtlasGuid() {
@@ -133,7 +127,7 @@ public class NiFiFlow {
 
     public void setAtlasGuid(String atlasGuid) {
         this.atlasGuid = atlasGuid;
-        atlasObjectId = createAtlasObjectId();
+        atlasObjectId.setGuid(atlasGuid);
     }
 
     public String getQualifiedName() {

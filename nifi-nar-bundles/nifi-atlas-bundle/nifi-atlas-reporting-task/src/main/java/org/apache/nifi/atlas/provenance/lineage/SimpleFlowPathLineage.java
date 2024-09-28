@@ -31,6 +31,7 @@ import org.apache.nifi.provenance.lineage.LineageNodeType;
 
 import java.util.List;
 
+import static org.apache.nifi.atlas.NiFiFlowPath.createDeepLinkUrl;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_NAME;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_QUALIFIED_NAME;
 import static org.apache.nifi.atlas.NiFiTypes.TYPE_NIFI_QUEUE;
@@ -85,15 +86,15 @@ public class SimpleFlowPathLineage extends AbstractLineageStrategy {
                 return;
             }
 
-            // Set groupId from incoming connection if available.
             final List<ConnectionStatus> incomingConnections = nifiFlow.getIncomingConnections(portProcessId);
             if (incomingConnections == null || incomingConnections.isEmpty()) {
                 logger.warn("Incoming relationship was not found: {}", event);
                 return;
             }
 
-            final ConnectionStatus connection = incomingConnections.get(0);
-            remotePortProcess.setGroupId(connection.getGroupId());
+            // Set link to the first incoming connection.
+            final ConnectionStatus firstConnection = incomingConnections.get(0);
+            remotePortProcess.setUrl(createDeepLinkUrl(nifiFlow.getUrl(), firstConnection.getGroupId(), firstConnection.getId()));
 
             // Create a queue.
             AtlasEntity queueFromStaticFlowPathToRemotePortProcessEntity = new AtlasEntity(TYPE_NIFI_QUEUE);
@@ -118,12 +119,13 @@ public class SimpleFlowPathLineage extends AbstractLineageStrategy {
             // So we need to create multiple DataSetRefs.
             final List<ConnectionStatus> connections = nifiFlow.getOutgoingConnections(portProcessId);
             if (connections == null || connections.isEmpty()) {
-                logger.warn("Incoming connection was not found: {}", event);
+                logger.warn("Outgoing connection was not found: {}", event);
                 return;
             }
 
-            // Set group id from outgoing connection if available.
-            remotePortProcess.setGroupId(connections.get(0).getGroupId());
+            // Set link to the first outgoing connection.
+            final ConnectionStatus firstConnection = connections.get(0);
+            remotePortProcess.setUrl(createDeepLinkUrl(nifiFlow.getUrl(), firstConnection.getGroupId(), firstConnection.getId()));
 
             // Create lineage: RemoteOutputPort dataSet -> RemoteOutputPort process
             DataSetRefs remotePortRefs = new DataSetRefs(portProcessId);

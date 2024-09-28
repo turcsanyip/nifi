@@ -77,7 +77,6 @@ public class NiFiFlow {
     private final Set<String> updatedEntityGuids = new HashSet<>();
     private final Set<String> stillExistingEntityGuids = new HashSet<>();
     private final Set<String> traversedPathIds = new HashSet<>();
-    private boolean urlUpdated = false;
 
     private final Map<String, NiFiFlowPath> flowPaths = new HashMap<>();
     private final Map<String, ProcessorStatus> processors = new HashMap<>();
@@ -165,9 +164,6 @@ public class NiFiFlow {
 
     public void setUrl(String url) {
         updateMetadata(metadataUpdated, updateAudit, ATTR_URL, this.url, url);
-        if (isUpdated(this.url, url)) {
-            this.urlUpdated = true;
-        }
         this.url = url;
     }
 
@@ -318,7 +314,6 @@ public class NiFiFlow {
         this.updateAudit.clear();
         this.updatedEntityGuids.clear();
         this.stillExistingEntityGuids.clear();
-        this.urlUpdated = false;
     }
 
     public boolean isMetadataUpdated() {
@@ -374,7 +369,7 @@ public class NiFiFlow {
     private EntityChangeType getFlowPathChangeType(NiFiFlowPath path) {
         if (path.getAtlasEntity() == null) {
             return EntityChangeType.CREATED;
-        } else if (path.isMetadataUpdated() || urlUpdated) {
+        } else if (path.isMetadataUpdated()) {
             return EntityChangeType.UPDATED;
         } else if (!traversedPathIds.contains(path.getId())) {
             return EntityChangeType.DELETED;
@@ -413,7 +408,7 @@ public class NiFiFlow {
         // Use first processor's id as qualifiedName.
         entity.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(path.getId()));
 
-        entity.setAttribute(ATTR_URL, path.createDeepLinkURL(getUrl()));
+        entity.setAttribute(ATTR_URL, path.getUrl());
 
         final boolean inputsChanged = setChangedIOIds(path, entity, true);
         final boolean outputsChanged = setChangedIOIds(path, entity, false);

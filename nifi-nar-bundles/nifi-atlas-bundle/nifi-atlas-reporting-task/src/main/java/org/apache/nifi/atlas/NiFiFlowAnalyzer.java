@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.apache.nifi.atlas.NiFiFlowPath.createDeepLinkUrl;
+
 public class NiFiFlowAnalyzer {
 
     private static final Logger logger = LoggerFactory.getLogger(NiFiFlowAnalyzer.class);
@@ -184,7 +186,9 @@ public class NiFiFlowAnalyzer {
             traverse(nifiFlow, path, headComponentId);
         });
 
-        // set flow path attributes: name, description, groupId
+        final Map<String, PortStatus> remoteOutputPorts = nifiFlow.getRemoteOutputPorts();
+
+        // set flow path attributes: name, description, url
         nifiFlow.getFlowPaths().values().forEach(path -> {
             final StringBuilder name = new StringBuilder();
             final StringBuilder description = new StringBuilder();
@@ -203,16 +207,22 @@ public class NiFiFlowAnalyzer {
             path.setDescription(description.toString());
 
             final String pathId = path.getId();
+            final String groupId;
             if (processors.containsKey(pathId)) {
                 final ProcessorStatus processor = processors.get(pathId);
-                path.setGroupId(processor.getGroupId());
+                groupId = processor.getGroupId();
             } else if (remoteInputPorts.containsKey(pathId)) {
-                final PortStatus port = nifiFlow.getRemoteInputPorts().get(pathId);
-                path.setGroupId(port.getGroupId());
+                final PortStatus port = remoteInputPorts.get(pathId);
+                groupId = port.getGroupId();
+            } else if (remoteOutputPorts.containsKey(pathId)) {
+                final PortStatus port = remoteOutputPorts.get(pathId);
+                groupId = port.getGroupId();
             } else {
                 logger.warn("Head component not found for FlowPath ID: {}", pathId);
-                path.setGroupId(nifiFlow.getRootProcessGroupId());
+                groupId = nifiFlow.getRootProcessGroupId();
             }
+
+            path.setUrl(createDeepLinkUrl(nifiFlow.getUrl(), groupId, pathId));
         });
     }
 

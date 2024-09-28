@@ -30,6 +30,7 @@ import static org.apache.nifi.atlas.AtlasUtils.getTypedQualifiedName;
 import static org.apache.nifi.atlas.AtlasUtils.updateMetadata;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_DESCRIPTION;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_NAME;
+import static org.apache.nifi.atlas.NiFiTypes.ATTR_URL;
 
 public class NiFiFlowPath implements AtlasProcess {
     private final List<String> processComponentIds = new ArrayList<>();
@@ -40,7 +41,7 @@ public class NiFiFlowPath implements AtlasProcess {
 
     private String name;
     private String description;
-    private String groupId;
+    private String url;
 
     private AtlasEntity atlasEntity;
 
@@ -86,13 +87,13 @@ public class NiFiFlowPath implements AtlasProcess {
         this.description = description;
     }
 
-    public String getGroupId() {
-        return groupId;
+    public String getUrl() {
+        return url;
     }
 
-    public void setGroupId(String groupId) {
-        updateMetadata(metadataUpdated, updateAudit, "groupId", this.groupId, groupId);
-        this.groupId = groupId;
+    public void setUrl(String url) {
+        updateMetadata(metadataUpdated, updateAudit, ATTR_URL, this.url, url);
+        this.url = url;
     }
 
     public void addProcessComponent(String processorId) {
@@ -123,14 +124,10 @@ public class NiFiFlowPath implements AtlasProcess {
         return id;
     }
 
-    public String createDeepLinkURL(String nifiUrl) {
-        // Remove lineage hash part.
-        final String componentId = id.split("::")[0];
-        return componentId.equals(groupId)
-                // This path represents the root path of a process group.
-                ? String.format("%s?processGroupId=%s", nifiUrl, groupId)
-                // This path represents a partial flow within a process group consists of processors.
-                : String.format("%s?processGroupId=%s&componentIds=%s", nifiUrl, groupId, componentId);
+    public static String createDeepLinkUrl(String nifiUrl, String groupId, String flowPathId) {
+        // Remove lineage hash part of the flow path id in case of complete path lineage strategy.
+        final String componentId = flowPathId.split("::")[0];
+        return String.format("%s?processGroupId=%s&componentIds=%s", nifiUrl, groupId, componentId);
     }
 
     /**

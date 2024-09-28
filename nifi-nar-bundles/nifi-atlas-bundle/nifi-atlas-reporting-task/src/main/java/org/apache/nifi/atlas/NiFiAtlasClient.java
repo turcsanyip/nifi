@@ -51,8 +51,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.apache.nifi.atlas.AtlasUtils.findIdByQualifiedName;
@@ -194,7 +192,6 @@ public class NiFiAtlasClient implements AutoCloseable {
         return typeDefs;
     }
 
-    private static final Pattern FLOW_PATH_URL_PATTERN = Pattern.compile("^http.+processGroupId=([0-9a-z\\-]+).*$");
     /**
      * Fetch existing NiFiFlow entity from Atlas.
      * @param rootProcessGroupId The id of a NiFi flow root process group.
@@ -231,15 +228,11 @@ public class NiFiAtlasClient implements AutoCloseable {
         for (AtlasEntity flowPathEntity : flowPathEntities.values()) {
             final String pathQualifiedName = getQualifiedName(flowPathEntity);
             final NiFiFlowPath flowPath = new NiFiFlowPath(getComponentIdFromQualifiedName(pathQualifiedName));
-            if (flowPathEntity.hasAttribute(ATTR_URL)) {
-                final Matcher urlMatcher = FLOW_PATH_URL_PATTERN.matcher(toStr(flowPathEntity.getAttribute(ATTR_URL)));
-                if (urlMatcher.matches()) {
-                    flowPath.setGroupId(urlMatcher.group(1));
-                }
-            }
+
             flowPath.setAtlasEntity(flowPathEntity);
             flowPath.setName(toStr(flowPathEntity.getAttribute(ATTR_NAME)));
             flowPath.setDescription(toStr(flowPathEntity.getAttribute(ATTR_DESCRIPTION)));
+            flowPath.setUrl(toStr(flowPathEntity.getAttribute(ATTR_URL)));
             flowPath.getInputs().addAll(toAtlasObjectIds(flowPathEntity.getRelationshipAttribute(ATTR_INPUTS)));
             flowPath.getOutputs().addAll(toAtlasObjectIds(flowPathEntity.getRelationshipAttribute(ATTR_OUTPUTS)));
             flowPath.startTrackingChanges(nifiFlow);

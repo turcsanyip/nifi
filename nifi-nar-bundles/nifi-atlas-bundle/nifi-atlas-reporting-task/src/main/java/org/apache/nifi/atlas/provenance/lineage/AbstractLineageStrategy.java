@@ -84,7 +84,7 @@ public abstract class AbstractLineageStrategy implements LineageStrategy {
         flowPathEntity.setAttribute(ATTR_NAME, flowPath.getName());
         flowPathEntity.setAttribute(ATTR_QUALIFIED_NAME, flowPath.getId() + "@" + nifiFlow.getNamespace());
         flowPathEntity.setAttribute(ATTR_NIFI_FLOW, nifiFlow.getAtlasObjectId());
-        flowPathEntity.setAttribute(ATTR_URL, flowPath.createDeepLinkURL(nifiFlow.getUrl()));
+        flowPathEntity.setAttribute(ATTR_URL, flowPath.getUrl());
 
         return flowPathEntity;
     }

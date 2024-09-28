@@ -246,7 +246,9 @@ public class CompleteFlowPathLineage extends AbstractLineageStrategy {
 
         flowPath.setName(pathName);
         final NiFiFlowPath staticFlowPath = nifiFlow.findPath(firstComponentId);
-        flowPath.setGroupId(staticFlowPath != null ? staticFlowPath.getGroupId() : nifiFlow.getRootProcessGroupId());
+        if (staticFlowPath != null) {
+            flowPath.setUrl(staticFlowPath.getUrl());
+        }
 
         // To defer send notification until entire lineagePath analysis gets finished, just add the instance into a buffer.
         createdFlowPaths.add(new Tuple<>(flowPath, dataSetRefs));

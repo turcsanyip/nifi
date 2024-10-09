@@ -17,6 +17,8 @@
 package org.apache.nifi.atlas;
 
 import org.apache.atlas.model.instance.AtlasObjectId;
+import org.apache.nifi.atlas.model.NiFiFlow;
+import org.apache.nifi.atlas.model.NiFiFlowPath;
 import org.apache.nifi.controller.status.ConnectionStatus;
 import org.apache.nifi.controller.status.PortStatus;
 import org.apache.nifi.controller.status.ProcessGroupStatus;
@@ -31,7 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.apache.nifi.atlas.NiFiFlowPath.createDeepLinkUrl;
+import static org.apache.nifi.atlas.model.NiFiFlowPath.createDeepLinkUrl;
 
 public class NiFiFlowAnalyzer {
 

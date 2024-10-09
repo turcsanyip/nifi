@@ -16,7 +16,7 @@
  */
 package org.apache.nifi.atlas.provenance;
 
-import org.apache.nifi.atlas.NiFiFlow;
+import org.apache.nifi.atlas.model.NiFiFlow;
 import org.apache.nifi.atlas.resolver.NamespaceResolver;
 import org.apache.nifi.controller.status.ConnectionStatus;
 import org.apache.nifi.provenance.ProvenanceEventRecord;

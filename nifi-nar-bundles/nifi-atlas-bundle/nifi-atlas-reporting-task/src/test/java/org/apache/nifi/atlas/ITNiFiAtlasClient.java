@@ -18,6 +18,7 @@ package org.apache.nifi.atlas;
 
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasObjectId;
+import org.apache.nifi.atlas.model.NiFiFlow;
 import org.apache.nifi.atlas.reporting.ReportLineageToAtlas;
 import org.apache.nifi.atlas.security.AtlasAuthN;
 import org.apache.nifi.atlas.security.Basic;

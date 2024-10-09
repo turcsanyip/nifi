@@ -17,6 +17,8 @@
 package org.apache.nifi.atlas;
 
 import org.apache.atlas.model.instance.AtlasObjectId;
+import org.apache.nifi.atlas.model.NiFiFlow;
+import org.apache.nifi.atlas.model.NiFiFlowPath;
 import org.apache.nifi.atlas.reporting.ITReportLineageToAtlas;
 import org.apache.nifi.controller.status.ConnectionStatus;
 import org.apache.nifi.controller.status.PortStatus;

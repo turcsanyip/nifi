@@ -14,10 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.nifi.atlas;
+package org.apache.nifi.atlas.model;
 
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasObjectId;
+import org.apache.nifi.atlas.AtlasProcess;
+import org.apache.nifi.atlas.AtlasUtils;
 
 import java.util.ArrayList;
 import java.util.HashSet;

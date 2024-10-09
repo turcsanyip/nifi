@@ -18,8 +18,8 @@ package org.apache.nifi.atlas.provenance.lineage;
 
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
-import org.apache.nifi.atlas.NiFiFlow;
-import org.apache.nifi.atlas.NiFiFlowPath;
+import org.apache.nifi.atlas.model.NiFiFlow;
+import org.apache.nifi.atlas.model.NiFiFlowPath;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.controller.status.ConnectionStatus;
@@ -31,7 +31,7 @@ import org.apache.nifi.provenance.lineage.LineageNodeType;
 
 import java.util.List;
 
-import static org.apache.nifi.atlas.NiFiFlowPath.createDeepLinkUrl;
+import static org.apache.nifi.atlas.model.NiFiFlowPath.createDeepLinkUrl;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_NAME;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_QUALIFIED_NAME;
 import static org.apache.nifi.atlas.NiFiTypes.TYPE_NIFI_QUEUE;

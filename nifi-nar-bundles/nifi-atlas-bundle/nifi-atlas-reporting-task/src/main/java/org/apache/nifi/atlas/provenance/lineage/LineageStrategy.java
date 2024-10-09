@@ -16,7 +16,7 @@
  */
 package org.apache.nifi.atlas.provenance.lineage;
 
-import org.apache.nifi.atlas.NiFiFlow;
+import org.apache.nifi.atlas.model.NiFiFlow;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
 import org.apache.nifi.provenance.ProvenanceEventRecord;
 import org.apache.nifi.provenance.ProvenanceEventType;

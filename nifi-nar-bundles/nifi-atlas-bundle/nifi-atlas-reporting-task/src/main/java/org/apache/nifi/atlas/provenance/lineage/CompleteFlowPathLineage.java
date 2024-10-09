@@ -17,8 +17,8 @@
 package org.apache.nifi.atlas.provenance.lineage;
 
 import org.apache.atlas.model.instance.AtlasEntity;
-import org.apache.nifi.atlas.NiFiFlow;
-import org.apache.nifi.atlas.NiFiFlowPath;
+import org.apache.nifi.atlas.model.NiFiFlow;
+import org.apache.nifi.atlas.model.NiFiFlowPath;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.provenance.ProvenanceEventRecord;

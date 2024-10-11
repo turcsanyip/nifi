@@ -67,7 +67,7 @@ import static org.apache.nifi.atlas.NiFiTypes.ATTR_GUID;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_INPUTS;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_OUTPUTS;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_QUALIFIED_NAME;
-import static org.apache.nifi.atlas.NiFiTypes.ATTR_TYPENAME;
+import static org.apache.nifi.atlas.NiFiTypes.ATTR_TYPE_NAME;
 import static org.apache.nifi.util.StringUtils.isEmpty;
 
 /**
@@ -139,7 +139,7 @@ public class AtlasAPIV2ServerEmulator {
         }
         final Collection<Map<String, Object>> refs = (Collection<Map<String, Object>>) _refs;
         return refs.stream().map(ref -> {
-            final String typeName = toStr(ref.get(ATTR_TYPENAME));
+            final String typeName = toStr(ref.get(ATTR_TYPE_NAME));
             final String qualifiedName = toStr(((Map<String, Object>) ref.get("uniqueAttributes")).get(ATTR_QUALIFIED_NAME));
             final String guid = toStr(ref.get(ATTR_GUID));
             if (isEmpty(guid)) {
@@ -397,7 +397,7 @@ public class AtlasAPIV2ServerEmulator {
 
     private static Map<String, Object> toMap(Referenceable ref) {
         final HashMap<String, Object> result = new HashMap<>();
-        result.put(ATTR_TYPENAME, ref.getTypeName());
+        result.put(ATTR_TYPE_NAME, ref.getTypeName());
         final HashMap<String, String> uniqueAttrs = new HashMap<>();
         uniqueAttrs.put(ATTR_QUALIFIED_NAME, (String) ref.getValuesMap().get(ATTR_QUALIFIED_NAME));
         result.put("uniqueAttributes", uniqueAttrs);
@@ -436,7 +436,7 @@ public class AtlasAPIV2ServerEmulator {
             final String qname = ((Map<String, String>) reference.get("uniqueAttributes")).get(ATTR_QUALIFIED_NAME);
             return isGuidAssigned(guid)
                     ? atlasEntitiesByGuid.get(guid)
-                    : atlasEntitiesByTypedQname.get(toTypedQualifiedName((String) reference.get(ATTR_TYPENAME), qname));
+                    : atlasEntitiesByTypedQname.get(toTypedQualifiedName((String) reference.get(ATTR_TYPE_NAME), qname));
         }
 
         @SuppressWarnings("unchecked")

@@ -17,113 +17,82 @@
 package org.apache.nifi.atlas.model;
 
 import org.apache.atlas.model.instance.AtlasEntity;
-import org.apache.atlas.model.instance.AtlasObjectId;
-import org.apache.nifi.atlas.AtlasProcess;
-import org.apache.nifi.atlas.AtlasUtils;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
+import java.util.Map;
 
-import static org.apache.nifi.atlas.AtlasUtils.getTypedQualifiedName;
-import static org.apache.nifi.atlas.AtlasUtils.updateMetadata;
-import static org.apache.nifi.atlas.NiFiTypes.ATTR_DESCRIPTION;
-import static org.apache.nifi.atlas.NiFiTypes.ATTR_NAME;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_URL;
+import static org.apache.nifi.atlas.NiFiTypes.TYPE_NIFI_FLOW_PATH;
 
-public class NiFiFlowPath implements AtlasProcess {
+public class NiFiFlowPath extends NiFiComponent {
+
     private final List<String> processComponentIds = new ArrayList<>();
 
-    private final String id;
-    private final Set<AtlasObjectId> inputs = new HashSet<>();
-    private final Set<AtlasObjectId> outputs = new HashSet<>();
+    private final Map<NiFiQueue, RelationshipInfo> inputQueues = new HashMap<>();
+    private final Map<NiFiQueue, RelationshipInfo> outputQueues = new HashMap<>();
 
-    private String name;
-    private String description;
-    private String url;
-
-    private AtlasEntity atlasEntity;
-
-    private final AtomicBoolean metadataUpdated = new AtomicBoolean(false);
-    private final List<String> updateAudit = new ArrayList<>();
-    private Set<String> existingInputGuids;
-    private Set<String> existingOutputGuids;
-
-    private Set<String> existingInputTypedQualifiedNames;
-    private Set<String> existingOutputTypedQualifiedNames;
-
-
-    public NiFiFlowPath(String id) {
-        this.id = id;
-    }
-    public NiFiFlowPath(String id, long lineageHash) {
-        this.id =  id + "::" + lineageHash;
+    public NiFiFlowPath(String componentId, String namespace) {
+        super(TYPE_NIFI_FLOW_PATH, componentId, namespace);
     }
 
-    public AtlasEntity getAtlasEntity() {
-        return atlasEntity;
+    public NiFiFlowPath(String componentId, long lineageHash, String namespace) {
+        super(TYPE_NIFI_FLOW_PATH, componentId + "::" + lineageHash, namespace);
     }
 
-    public void setAtlasEntity(AtlasEntity atlasEntity) {
-        this.atlasEntity = atlasEntity;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        updateMetadata(metadataUpdated, updateAudit, ATTR_NAME, this.name, name);
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        updateMetadata(metadataUpdated, updateAudit, ATTR_DESCRIPTION, this.description, description);
-        this.description = description;
+    public NiFiFlowPath(AtlasEntity flowPathEntity) {
+        super(flowPathEntity);
     }
 
     public String getUrl() {
-        return url;
+        return getStringAttribute(ATTR_URL);
     }
 
     public void setUrl(String url) {
-        updateMetadata(metadataUpdated, updateAudit, ATTR_URL, this.url, url);
-        this.url = url;
+        setStringAttribute(ATTR_URL, url);
     }
 
     public void addProcessComponent(String processorId) {
         processComponentIds.add(processorId);
     }
 
-    public Set<AtlasObjectId> getInputs() {
-        return inputs;
-    }
-
-    public Set<AtlasObjectId> getOutputs() {
-        return outputs;
-    }
-
-    public boolean hasInput(AtlasEntity entity) {
-        return existingInputTypedQualifiedNames!= null && existingInputTypedQualifiedNames.contains(getTypedQualifiedName(entity));
-    }
-
-    public boolean hasOutput(AtlasEntity entity) {
-        return existingOutputTypedQualifiedNames != null && existingOutputTypedQualifiedNames.contains(getTypedQualifiedName(entity));
-    }
-
-    public List<String> getProcessComponentIds() {
+    public List<String> getProcessComponents() {
         return processComponentIds;
     }
 
-    public String getId() {
-        return id;
+    void addInputQueue(NiFiQueue queue, String relationshipGuid) {
+        inputQueues.put(queue, new RelationshipInfo(relationshipGuid));
+    }
+
+    void addOutputQueue(NiFiQueue queue, String relationshipGuid) {
+        outputQueues.put(queue, new RelationshipInfo(relationshipGuid));
+    }
+
+    public void connectInputQueue(NiFiQueue queue) {
+        final RelationshipInfo relationshipInfo = inputQueues.get(queue);
+        if (relationshipInfo == null) {
+            inputQueues.put(queue, new RelationshipInfo());
+        } else {
+            relationshipInfo.notifyActive();
+        }
+    }
+
+    public void connectOutputQueue(NiFiQueue queue) {
+        final RelationshipInfo relationshipInfo = outputQueues.get(queue);
+        if (relationshipInfo == null) {
+            outputQueues.put(queue, new RelationshipInfo());
+        } else {
+            relationshipInfo.notifyActive();
+        }
+    }
+
+    public Map<NiFiQueue, RelationshipInfo> getInputQueues() {
+        return inputQueues;
+    }
+
+    public Map<NiFiQueue, RelationshipInfo> getOutputQueues() {
+        return outputQueues;
     }
 
     public static String createDeepLinkUrl(String nifiUrl, String groupId, String flowPathId) {
@@ -132,59 +101,11 @@ public class NiFiFlowPath implements AtlasProcess {
         return String.format("%s?processGroupId=%s&componentIds=%s", nifiUrl, groupId, componentId);
     }
 
-    /**
-     * Start tracking changes from current state.
-     */
-    public void startTrackingChanges(NiFiFlow nifiFlow) {
-        this.metadataUpdated.set(false);
-        this.updateAudit.clear();
-        existingInputGuids = inputs.stream().map(AtlasObjectId::getGuid).collect(Collectors.toSet());
-        existingOutputGuids = outputs.stream().map(AtlasObjectId::getGuid).collect(Collectors.toSet());
-
-        existingInputTypedQualifiedNames = inputs.stream().map(AtlasUtils::getTypedQualifiedName).collect(Collectors.toSet());
-        existingOutputTypedQualifiedNames = outputs.stream().map(AtlasUtils::getTypedQualifiedName).collect(Collectors.toSet());
-
-        // Remove all nifi_queues those are owned by the nifiFlow to delete ones no longer exist.
-        // Because it should be added again if not deleted when flow analysis finished.
-        final Set<AtlasObjectId> ownedQueues = nifiFlow.getQueues().keySet();
-        inputs.removeAll(ownedQueues);
-        outputs.removeAll(ownedQueues);
-    }
-
-    public boolean isMetadataUpdated() {
-        return this.metadataUpdated.get();
-    }
-
-    public List<String> getUpdateAudit() {
-        return updateAudit;
-    }
-
-    boolean isDataSetReferenceChanged(Set<AtlasObjectId> ids, boolean isInput) {
-        final Set<String> guids = ids.stream().map(AtlasObjectId::getGuid).collect(Collectors.toSet());
-        final Set<String> existingGuids = isInput ? existingInputGuids : existingOutputGuids;
-        return existingGuids == null || !existingGuids.equals(guids);
-    }
-
     @Override
     public String toString() {
         return "NiFiFlowPath{" +
-                "name='" + name + '\'' +
+                "name='" + getName() + '\'' +
                 ", processComponentIds=" + processComponentIds +
                 '}';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        NiFiFlowPath that = (NiFiFlowPath) o;
-
-        return id.equals(that.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return id.hashCode();
     }
 }

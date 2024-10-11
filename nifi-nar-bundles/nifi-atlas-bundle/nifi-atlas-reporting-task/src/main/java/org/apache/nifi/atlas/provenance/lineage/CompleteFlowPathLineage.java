@@ -17,6 +17,7 @@
 package org.apache.nifi.atlas.provenance.lineage;
 
 import org.apache.atlas.model.instance.AtlasEntity;
+import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.nifi.atlas.model.NiFiFlow;
 import org.apache.nifi.atlas.model.NiFiFlowPath;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
@@ -77,7 +78,7 @@ public class CompleteFlowPathLineage extends AbstractLineageStrategy {
                 final NiFiFlowPath flowPath = createdFlowPath.getKey();
                 final DataSetRefs dataSetRefs = createdFlowPath.getValue();
 
-                addDataSetRefs(lineageContext, nifiFlow, flowPath, dataSetRefs);
+                addDataSetRefs(lineageContext, flowPath, dataSetRefs);
             }
         }
     }
@@ -220,7 +221,8 @@ public class CompleteFlowPathLineage extends AbstractLineageStrategy {
 
         final long hash = crc32.getValue();
         lineagePath.setLineagePathHash(hash);
-        final NiFiFlowPath flowPath = new NiFiFlowPath(firstComponentId, hash);
+        final NiFiFlowPath flowPath = new NiFiFlowPath(firstComponentId, hash, nifiFlow.getNamespace());
+        flowPath.setNiFiFlow(new AtlasObjectId(nifiFlow.getGuid()));
 
         // In order to differentiate a queue between parents and this flow_path, add the hash into the queue qname.
         // E.g, FF1 and FF2 read from dirA were merged, vs FF3 and FF4 read from dirB were merged then passed here, these two should be different queue.

@@ -28,12 +28,6 @@ import org.apache.nifi.provenance.ProvenanceEventRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.nifi.atlas.NiFiTypes.ATTR_NAME;
-import static org.apache.nifi.atlas.NiFiTypes.ATTR_NIFI_FLOW;
-import static org.apache.nifi.atlas.NiFiTypes.ATTR_QUALIFIED_NAME;
-import static org.apache.nifi.atlas.NiFiTypes.ATTR_URL;
-import static org.apache.nifi.atlas.NiFiTypes.TYPE_NIFI_FLOW_PATH;
-
 public abstract class AbstractLineageStrategy implements LineageStrategy {
 
     protected Logger logger = LoggerFactory.getLogger(getClass());
@@ -57,35 +51,22 @@ public abstract class AbstractLineageStrategy implements LineageStrategy {
             return;
         }
 
-        addDataSetRefs(lineageContext, nifiFlow, flowPath, refs);
+        addDataSetRefs(lineageContext, flowPath, refs);
     }
 
-    protected void addDataSetRefs(LineageContext lineageContext, NiFiFlow nifiFlow, NiFiFlowPath flowPath, DataSetRefs refs) {
+    protected void addDataSetRefs(LineageContext lineageContext, NiFiFlowPath flowPath, DataSetRefs refs) {
         logger.debug("Adding DataSetRefs: {} {}", flowPath, refs);
 
-        final AtlasEntity flowPathEntity = flowPath.getAtlasEntity() != null ? flowPath.getAtlasEntity() : createFlowPathEntity(flowPath, nifiFlow);
+        final AtlasEntity flowPathEntity = flowPath.getAtlasEntity();
 
         for (AtlasEntityWithExtInfo input: refs.getInputs()) {
-            if (!flowPath.hasInput(input.getEntity())) {
-                lineageContext.addFlowPathInput(flowPathEntity, input);
-            }
+            // TODO: use LRU cache for DataSet relationships
+            lineageContext.addFlowPathInput(flowPathEntity, input);
         }
 
         for (AtlasEntityWithExtInfo output: refs.getOutputs()) {
-            if (!flowPath.hasOutput(output.getEntity())) {
-                lineageContext.addFlowPathOutput(flowPathEntity, output);
-            }
+            // TODO: use LRU cache for DataSet relationships
+            lineageContext.addFlowPathOutput(flowPathEntity, output);
         }
-    }
-
-    private AtlasEntity createFlowPathEntity(NiFiFlowPath flowPath, NiFiFlow nifiFlow) {
-        final AtlasEntity flowPathEntity = new AtlasEntity(TYPE_NIFI_FLOW_PATH);
-
-        flowPathEntity.setAttribute(ATTR_NAME, flowPath.getName());
-        flowPathEntity.setAttribute(ATTR_QUALIFIED_NAME, flowPath.getId() + "@" + nifiFlow.getNamespace());
-        flowPathEntity.setAttribute(ATTR_NIFI_FLOW, nifiFlow.getAtlasObjectId());
-        flowPathEntity.setAttribute(ATTR_URL, flowPath.getUrl());
-
-        return flowPathEntity;
     }
 }

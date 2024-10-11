@@ -14,17 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.nifi.atlas;
+package org.apache.nifi.atlas.model;
 
-import org.apache.atlas.model.instance.AtlasObjectId;
+import org.apache.atlas.model.instance.AtlasEntity;
 
-import java.util.Set;
+import static org.apache.nifi.atlas.NiFiTypes.TYPE_NIFI_QUEUE;
 
-/**
- * This interface represents 'Process' type in Atlas type system
- * which has inputs and outputs attribute referring 'DataSet' entities.
- */
-public interface AtlasProcess {
-    Set<AtlasObjectId> getInputs();
-    Set<AtlasObjectId> getOutputs();
+public class NiFiQueue extends NiFiComponent {
+
+    public NiFiQueue(String destinationComponentId, String namespace) {
+        super(TYPE_NIFI_QUEUE, destinationComponentId, namespace);
+
+        setName("queue");
+        setDescription("Input queue for " + destinationComponentId);
+    }
+
+    public NiFiQueue(AtlasEntity atlasEntity) {
+        super(atlasEntity);
+    }
 }

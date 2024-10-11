@@ -137,7 +137,7 @@ public class TestNiFiFlowAnalyzer {
 
         // first path
         final NiFiFlowPath path0 = paths.get(pr0.getId());
-        assertEquals(path0.getId(), path0.getProcessComponentIds().get(0));
+        assertEquals(path0.getId(), path0.getProcessComponents().get(0));
         assertEquals(rootPG.getId(), path0.getGroupId());
 
         // Should be able to find a path from a given processor GUID.
@@ -204,8 +204,8 @@ public class TestNiFiFlowAnalyzer {
         // Order is not guaranteed
         final NiFiFlowPath pathA = paths.get(pr0.getId());
         final NiFiFlowPath pathB = paths.get(pr2.getId());
-        assertEquals(2, pathA.getProcessComponentIds().size());
-        assertEquals(2, pathB.getProcessComponentIds().size());
+        assertEquals(2, pathA.getProcessComponents().size());
+        assertEquals(2, pathB.getProcessComponents().size());
 
         // Should be able to find a path from a given processor GUID.
         final NiFiFlowPath pathForPr0 = nifiFlow.findPath(pr0.getId());
@@ -253,9 +253,9 @@ public class TestNiFiFlowAnalyzer {
         final NiFiFlowPath pathA = paths.get(pr0.getId());
         final NiFiFlowPath pathB = paths.get(pr2.getId());
         final NiFiFlowPath pathC = paths.get(pr3.getId());
-        assertEquals(2, pathA.getProcessComponentIds().size());
-        assertEquals(1, pathB.getProcessComponentIds().size());
-        assertEquals(1, pathC.getProcessComponentIds().size());
+        assertEquals(2, pathA.getProcessComponents().size());
+        assertEquals(1, pathB.getProcessComponents().size());
+        assertEquals(1, pathC.getProcessComponents().size());
 
         // A queue is added as input for the joint point.
         assertEquals(1, pathC.getInputs().size());

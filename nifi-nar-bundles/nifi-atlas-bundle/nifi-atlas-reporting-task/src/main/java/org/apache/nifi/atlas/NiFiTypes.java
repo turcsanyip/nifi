@@ -39,13 +39,16 @@ public class NiFiTypes {
     public static final String TYPE_NIFI_INPUT_PORT = "nifi_input_port";
     public static final String TYPE_NIFI_OUTPUT_PORT = "nifi_output_port";
 
-    public static final String ATTR_GUID = "guid";
-    public static final String ATTR_TYPENAME = "typeName";
+    public static final String REL_TYPE_PROCESS_INPUT = "dataset_process_inputs";
+    public static final String REL_TYPE_PROCESS_OUTPUT = "process_dataset_outputs";
+
+//    public static final String ATTR_GUID = "guid";
+    public static final String ATTR_TYPE_NAME = "typeName";
     public static final String ATTR_NAME = "name";
     public static final String ATTR_CLUSTER_NAME = "clusterName";
     public static final String ATTR_DESCRIPTION = "description";
-    public static final String ATTR_INPUTS = "inputs";
-    public static final String ATTR_OUTPUTS = "outputs";
+//    public static final String ATTR_INPUTS = "inputs";
+//    public static final String ATTR_OUTPUTS = "outputs";
     public static final String ATTR_URL = "url";
     public static final String ATTR_URI = "uri";
     public static final String ATTR_PATH = "path";
@@ -55,10 +58,13 @@ public class NiFiTypes {
     public static final String ATTR_QUEUES = "queues";
     public static final String ATTR_INPUT_PORTS = "inputPorts";
     public static final String ATTR_OUTPUT_PORTS = "outputPorts";
+
+    public static final String ATTR_ENTITY_STATUS = "entityStatus";
+    public static final String ATTR_RELATIONSHIP_GUID = "relationshipGuid";
     public static final String ATTR_RELATIONSHIP_STATUS = "relationshipStatus";
 
-    public static final String REL_PROCESS_INPUT = "dataset_process_inputs";
-    public static final String REL_PROCESS_OUTPUT = "process_dataset_outputs";
+    public static final String REL_ATTR_INPUT_TO_PROCESSES = "inputToProcesses";
+    public static final String REL_ATTR_OUTPUT_FROM_PROCESSES = "outputFromProcesses";
 
     @FunctionalInterface
     interface EntityDefinition {

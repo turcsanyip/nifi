@@ -31,6 +31,7 @@ import org.apache.nifi.annotation.documentation.DeprecationNotice;
 import org.apache.nifi.annotation.documentation.Tags;
 import org.apache.nifi.annotation.lifecycle.OnScheduled;
 import org.apache.nifi.annotation.lifecycle.OnUnscheduled;
+import org.apache.nifi.atlas.AtlasUtils;
 import org.apache.nifi.atlas.NiFiAtlasClient;
 import org.apache.nifi.atlas.model.NiFiFlow;
 import org.apache.nifi.atlas.NiFiFlowAnalyzer;
@@ -772,9 +773,9 @@ public class ReportLineageToAtlas extends AbstractReportingTask {
             existingNiFiFlow = atlasClient.fetchNiFiFlow(rootProcessGroup.getId(), namespace);
         } catch (AtlasServiceException e) {
             if (ClientResponse.Status.NOT_FOUND.equals(e.getStatus())){
-                getLogger().debug("Existing flow was not found for {}@{}", rootProcessGroup.getId(), namespace);
+                getLogger().debug("Existing flow was not found for {}", AtlasUtils.toQualifiedName(namespace, rootProcessGroup.getId()));
             } else {
-                throw new RuntimeException("Failed to fetch existing NiFI flow. " + e, e);
+                throw new ProcessException("Failed to fetch existing NiFI flow", e);
             }
         }
 
@@ -782,10 +783,7 @@ public class ReportLineageToAtlas extends AbstractReportingTask {
         nifiFlow.setName(flowName);
         nifiFlow.setUrl(nifiUrl);
 
-        final NiFiFlowAnalyzer flowAnalyzer = new NiFiFlowAnalyzer();
-
-        flowAnalyzer.analyzeProcessGroup(nifiFlow, rootProcessGroup);
-        flowAnalyzer.analyzePaths(nifiFlow);
+        NiFiFlowAnalyzer.analyze(nifiFlow, rootProcessGroup);
 
         return nifiFlow;
     }

@@ -63,15 +63,13 @@ public abstract class AbstractLineageStrategy implements LineageStrategy {
     protected void addDataSetRefs(LineageContext lineageContext, NiFiFlowPath flowPath, DataSetRefs refs) {
         logger.debug("Adding DataSetRefs: {} {}", flowPath, refs);
 
-        final AtlasEntity flowPathEntity = flowPath.getAtlasEntity();
+        final AtlasEntity flowPathEntity = flowPath.getAtlasEntity(); // TODO: NiFiFlowPath
 
-        for (AtlasEntityWithExtInfo input: refs.getInputs()) {
-            // TODO: use LRU cache for DataSet relationships
+        for (AtlasEntityWithExtInfo input: refs.getInputs()) { // TODO: DataSet
             lineageContext.addFlowPathInput(flowPathEntity, input);
         }
 
         for (AtlasEntityWithExtInfo output: refs.getOutputs()) {
-            // TODO: use LRU cache for DataSet relationships
             lineageContext.addFlowPathOutput(flowPathEntity, output);
         }
     }

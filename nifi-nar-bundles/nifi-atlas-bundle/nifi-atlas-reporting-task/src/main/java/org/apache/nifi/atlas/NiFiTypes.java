@@ -66,6 +66,27 @@ public class NiFiTypes {
     public static final String REL_ATTR_INPUT_TO_PROCESSES = "inputToProcesses";
     public static final String REL_ATTR_OUTPUT_FROM_PROCESSES = "outputFromProcesses";
 
+    public enum RelationshipType {
+        PROCESS_INPUT(REL_TYPE_PROCESS_INPUT, "I"),
+        PROCESS_OUTPUT(REL_TYPE_PROCESS_OUTPUT, "O");
+
+        private final String name;
+        private final String code;
+
+        RelationshipType(String name, String code) {
+            this.name = name;
+            this.code = code;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getCode() {
+            return code;
+        }
+    }
+
     @FunctionalInterface
     interface EntityDefinition {
         void define(AtlasEntityDef entity, Set<String> superTypes, List<AtlasAttributeDef> attributes);

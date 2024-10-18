@@ -30,8 +30,10 @@ import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.DeprecationNotice;
 import org.apache.nifi.annotation.documentation.Tags;
 import org.apache.nifi.annotation.lifecycle.OnScheduled;
+import org.apache.nifi.annotation.lifecycle.OnStopped;
 import org.apache.nifi.annotation.lifecycle.OnUnscheduled;
 import org.apache.nifi.atlas.AtlasUtils;
+import org.apache.nifi.atlas.LineageCache;
 import org.apache.nifi.atlas.NiFiAtlasClient;
 import org.apache.nifi.atlas.model.NiFiFlow;
 import org.apache.nifi.atlas.NiFiFlowAnalyzer;
@@ -352,6 +354,8 @@ public class ReportLineageToAtlas extends AbstractReportingTask {
     private volatile NamespaceResolvers namespaceResolvers;
     private volatile LineageStrategy lineageStrategy;
 
+    private volatile LineageCache lineageCache;
+
     @Override
     protected List<PropertyDescriptor> getSupportedPropertyDescriptors() {
         final List<PropertyDescriptor> properties = new ArrayList<>();
@@ -455,6 +459,8 @@ public class ReportLineageToAtlas extends AbstractReportingTask {
         initAtlasProperties(context);
         initLineageStrategy(context);
         initNamespaceResolvers(context);
+
+        lineageCache = new LineageCache();
     }
 
     private void initLineageStrategy(ConfigurationContext context) throws IOException {
@@ -654,7 +660,7 @@ public class ReportLineageToAtlas extends AbstractReportingTask {
     protected NiFiAtlasClient createNiFiAtlasClient(ReportingContext context) {
         List<String> urls = parseAtlasUrls(context.getProperty(ATLAS_URLS));
         try {
-            return new NiFiAtlasClient(atlasAuthN.createClient(urls.toArray(new String[]{})));
+            return new NiFiAtlasClient(atlasAuthN.createClient(urls.toArray(new String[]{})), lineageCache);
         } catch (final NullPointerException e) {
             throw new ProcessException(String.format("Failed to initialize Atlas client due to %s." +
                     " Make sure 'atlas-application.properties' is in the directory specified with %s" +
@@ -693,6 +699,11 @@ public class ReportLineageToAtlas extends AbstractReportingTask {
             // This should be called from @OnUnscheduled to stop the loop in the thread called from onTrigger.
             consumer.setScheduled(false);
         }
+    }
+
+    @OnStopped
+    public void onStopped() {
+        lineageCache = null;
     }
 
     @Override
@@ -796,9 +807,9 @@ public class ReportLineageToAtlas extends AbstractReportingTask {
                 // FIXME: This class cast shouldn't be necessary to query lineage. Possible refactor target in next major update.
                 (ProvenanceRepository)eventAccess.getProvenanceRepository(), awsS3ModelVersion, filesystemPathsLevel);
 
-        final LineageContext lineageContext = new LineageContext();
-
         consumer.consumeEvents(context, (componentMapHolder, events) -> {
+            final LineageContext lineageContext = new LineageContext();
+
             for (ProvenanceEventRecord event : events) {
                 try {
                     lineageStrategy.processEvent(analysisContext, lineageContext, nifiFlow, event);

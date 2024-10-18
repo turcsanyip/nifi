@@ -19,7 +19,6 @@ package org.apache.nifi.atlas.provenance.lineage;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -40,10 +39,6 @@ public class LineageContext {
     // Map[FlowPath qualifiedName -> Set[DataSet typedQualifiedName]]
     private final Map<String, Set<String>> flowPathInputs = new HashMap<>();
     private final Map<String, Set<String>> flowPathOutputs = new HashMap<>();
-
-    // Map[FlowPath qualifiedName -> Set[DataSet typedQualifiedName]]
-    private final Map<String, Set<String>> savedFlowPathInputs = new HashMap<>();
-    private final Map<String, Set<String>> savedFlowPathOutputs = new HashMap<>();
 
     public Map<String, AtlasEntity> getFlowPaths() {
         return flowPaths;
@@ -71,45 +66,16 @@ public class LineageContext {
 
     private void addFlowPathDataSet(AtlasEntity flowPath, AtlasEntityWithExtInfo dataSet, boolean isInput) {
         String flowPathQualifiedName = getQualifiedName(flowPath);
-        flowPaths.putIfAbsent(flowPathQualifiedName, flowPath);
+        flowPaths.put(flowPathQualifiedName, flowPath);
 
         String dataSetTypedQualifiedName = getTypedQualifiedName(dataSet.getEntity());
-        dataSets.putIfAbsent(dataSetTypedQualifiedName, dataSet);
+        dataSets.put(dataSetTypedQualifiedName, dataSet);
 
-        if (!isFlowPathDataSetAlreadyAdded(flowPathQualifiedName, dataSetTypedQualifiedName, isInput)) {
-            Set<String> flowPathDataSets = isInput
-                    ? flowPathInputs.computeIfAbsent(flowPathQualifiedName, k -> new HashSet<>())
-                    : flowPathOutputs.computeIfAbsent(flowPathQualifiedName, k -> new HashSet<>());
+        Set<String> flowPathDataSets = isInput
+                ? flowPathInputs.computeIfAbsent(flowPathQualifiedName, k -> new HashSet<>())
+                : flowPathOutputs.computeIfAbsent(flowPathQualifiedName, k -> new HashSet<>());
 
-            flowPathDataSets.add(dataSetTypedQualifiedName);
-        }
-    }
-
-    private boolean isFlowPathDataSetAlreadyAdded(String flowPathQualifiedName, String dataSetTypedQualifiedName, boolean isInput) {
-        if (isInput) {
-            return isFlowPathDataSetAlreadyAdded(flowPathQualifiedName, dataSetTypedQualifiedName, flowPathInputs)
-                    || isFlowPathDataSetAlreadyAdded(flowPathQualifiedName, dataSetTypedQualifiedName, savedFlowPathInputs);
-        } else {
-            return isFlowPathDataSetAlreadyAdded(flowPathQualifiedName, dataSetTypedQualifiedName, flowPathOutputs)
-                    || isFlowPathDataSetAlreadyAdded(flowPathQualifiedName, dataSetTypedQualifiedName, savedFlowPathOutputs);
-        }
-    }
-
-    private boolean isFlowPathDataSetAlreadyAdded(String flowPathQualifiedName, String dataSetTypedQualifiedName, Map<String, Set<String>> flowPathDataSets) {
-        return flowPathDataSets.getOrDefault(flowPathQualifiedName, Collections.emptySet()).contains(dataSetTypedQualifiedName);
-    }
-
-    public void commit() {
-        flowPathInputs.forEach((flowPath, inputs) ->
-                savedFlowPathInputs.computeIfAbsent(flowPath, k -> new HashSet<>())
-                        .addAll(inputs));
-
-        flowPathOutputs.forEach((flowPath, outputs) ->
-                savedFlowPathOutputs.computeIfAbsent(flowPath, k -> new HashSet<>())
-                        .addAll(outputs));
-
-        flowPathInputs.clear();
-        flowPathOutputs.clear();
+        flowPathDataSets.add(dataSetTypedQualifiedName);
     }
 
     @Override
@@ -119,8 +85,6 @@ public class LineageContext {
                 ", dataSets=" + dataSetsToString() +
                 ", flowPathInputs=" + flowPathInputs +
                 ", flowPathOutputs=" + flowPathOutputs +
-                ", savedFlowPathInputs=" + savedFlowPathInputs +
-                ", savedFlowPathOutputs=" + savedFlowPathOutputs +
                 '}';
     }
 

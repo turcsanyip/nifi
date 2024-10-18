@@ -68,6 +68,8 @@ public class NiFiFlow extends AbstractNiFiAtlasEntity {
     private final Map<String, NiFiInputPort> inputPorts = new HashMap<>();
     private final Map<String, NiFiOutputPort> outputPorts = new HashMap<>();
 
+    // Map[process component ID -> NiFiFlowPath]
+    private Map<String, NiFiFlowPath> flowPathLookup;
 
     public NiFiFlow(String rootProcessGroupId, String namespace) {
         super(TYPE_NIFI_FLOW, rootProcessGroupId, namespace);
@@ -246,13 +248,17 @@ public class NiFiFlow extends AbstractNiFiAtlasEntity {
     /**
      * Find the flow_path that contains the specified componentId.
      */
-    public NiFiFlowPath findPath(String componentId) { // TODO
-        for (NiFiFlowPath path: flowPaths.values()) {
-            if (path.getProcessComponents().contains(componentId)){
-                return path;
+    public NiFiFlowPath findPath(String componentId) {
+        if (flowPathLookup == null) {
+            flowPathLookup = new HashMap<>();
+            for (NiFiFlowPath path : flowPaths.values()) {
+                for (String id : path.getProcessComponents()) {
+                    flowPathLookup.put(id, path);
+                }
             }
         }
-        return null;
+
+        return flowPathLookup.get(componentId);
     }
 
     /**

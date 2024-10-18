@@ -24,8 +24,8 @@ import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.model.SearchFilter;
 import org.apache.atlas.model.discovery.AtlasSearchResult;
 import org.apache.atlas.model.instance.AtlasEntity;
-import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo;
+import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.atlas.model.instance.AtlasRelationship;
 import org.apache.atlas.model.instance.EntityMutationResponse;
@@ -33,6 +33,7 @@ import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.model.typedef.AtlasStructDef.AtlasAttributeDef;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
 import org.apache.commons.collections4.ListUtils;
+import org.apache.nifi.atlas.NiFiTypes.RelationshipType;
 import org.apache.nifi.atlas.model.NiFiAtlasEntity;
 import org.apache.nifi.atlas.model.NiFiComponent;
 import org.apache.nifi.atlas.model.NiFiFlow;
@@ -81,8 +82,11 @@ public class NiFiAtlasClient implements AutoCloseable {
 
     private final AtlasClientV2 atlasClient;
 
-    public NiFiAtlasClient(AtlasClientV2 atlasClient) {
+    private final LineageCache lineageCache;
+
+    public NiFiAtlasClient(AtlasClientV2 atlasClient, LineageCache lineageCache) {
         this.atlasClient = atlasClient;
+        this.lineageCache = lineageCache;
     }
 
     @Override
@@ -406,25 +410,27 @@ public class NiFiAtlasClient implements AutoCloseable {
     public void saveLineage(LineageContext lineageContext) throws AtlasServiceException {
         logger.debug("Saving LineageContext: {}", lineageContext);
 
-        Predicate<AtlasEntityWithExtInfo> isNewEntity = entityExt -> !isGuidAssigned(entityExt.getEntity().getGuid());
+        Predicate<AtlasEntityWithExtInfo> isGuidNotAssigned = entityExt -> !isGuidAssigned(entityExt.getEntity().getGuid());
 
         Map<String, AtlasEntity> flowPaths = lineageContext.getFlowPaths();
         List<AtlasEntityWithExtInfo> newFlowPaths = flowPaths.values().stream()
                 .map(AtlasEntityWithExtInfo::new)
-                .filter(isNewEntity)
+                .filter(isGuidNotAssigned)
                 .collect(Collectors.toList());
         createEntities(newFlowPaths);
 
         Map<String, AtlasEntityWithExtInfo> dataSets = lineageContext.getDataSets();
         List<AtlasEntityWithExtInfo> newDataSets = dataSets.values().stream()
-                .filter(isNewEntity)
+                .filter(isGuidNotAssigned)
+                .peek(e -> lineageCache.getDataSetGuid(getTypedQualifiedName(e.getEntity())).ifPresent(guid -> e.getEntity().setGuid(guid)))
+                .filter(isGuidNotAssigned)
                 .collect(Collectors.toList());
         createEntities(newDataSets);
 
-        createFlowPathDataSetRelationships(flowPaths, dataSets, lineageContext.getFlowPathInputs(), REL_TYPE_PROCESS_INPUT);
-        createFlowPathDataSetRelationships(flowPaths, dataSets, lineageContext.getFlowPathOutputs(), REL_TYPE_PROCESS_OUTPUT);
+        newDataSets.forEach(e -> lineageCache.addDataSetGuid(getTypedQualifiedName(e.getEntity()), e.getEntity().getGuid()));
 
-        lineageContext.commit();
+        createFlowPathDataSetRelationships(flowPaths, dataSets, lineageContext.getFlowPathInputs(), RelationshipType.PROCESS_INPUT);
+        createFlowPathDataSetRelationships(flowPaths, dataSets, lineageContext.getFlowPathOutputs(), RelationshipType.PROCESS_OUTPUT);
     }
 
     private void createEntities(List<AtlasEntityWithExtInfo> entityExtList) throws AtlasServiceException {
@@ -456,7 +462,7 @@ public class NiFiAtlasClient implements AutoCloseable {
     private void createFlowPathDataSetRelationships(Map<String, AtlasEntity> flowPaths,
                                                     Map<String, AtlasEntityWithExtInfo> dataSets,
                                                     Map<String, Set<String>> flowPathDataSets,
-                                                    String relationshipTypeName) throws AtlasServiceException {
+                                                    RelationshipType relationshipType) throws AtlasServiceException {
         for (Map.Entry<String, Set<String>> entry: flowPathDataSets.entrySet()) {
             String flowPathQualifiedName = entry.getKey();
             String flowPathGuid = flowPaths.get(flowPathQualifiedName).getGuid();
@@ -464,7 +470,12 @@ public class NiFiAtlasClient implements AutoCloseable {
             for (String dataSetTypedQualifiedName: entry.getValue()) {
                 String dataSetGuid = dataSets.get(dataSetTypedQualifiedName).getEntity().getGuid();
 
-                AtlasRelationship relationship = new AtlasRelationship(relationshipTypeName);
+                if (lineageCache.containsRelationship(relationshipType, flowPathGuid, dataSetGuid)) {
+                    // TODO: debug log
+                    continue;
+                }
+
+                AtlasRelationship relationship = new AtlasRelationship(relationshipType.getName());
 
                 relationship.setEnd1(new AtlasObjectId(flowPathGuid));
                 relationship.setEnd2(new AtlasObjectId(dataSetGuid));
@@ -473,13 +484,15 @@ public class NiFiAtlasClient implements AutoCloseable {
                     atlasClient.createRelationship(relationship);
                 } catch (AtlasServiceException ase) {
                     if (ase.getStatus() == ClientResponse.Status.CONFLICT) {
-                        // the relationship has already been created by another node in the cluster
+                        // the relationship has already been created by another node in the cluster or during earlier execution of the reporting task
                         logger.info("Relationship already exists. FlowPath: guid={} / qualifiedName={}, DataSet: guid={} / typedQualifiedName={}",
                                 flowPathGuid, flowPathQualifiedName, dataSetGuid, dataSetTypedQualifiedName);
                     } else {
                         throw ase;
                     }
                 }
+
+                lineageCache.addRelationship(relationshipType, flowPathGuid, dataSetGuid);
             }
         }
     }

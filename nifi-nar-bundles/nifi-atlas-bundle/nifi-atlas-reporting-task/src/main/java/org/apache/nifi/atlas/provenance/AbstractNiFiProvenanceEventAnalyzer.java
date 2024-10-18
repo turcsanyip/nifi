@@ -16,8 +16,6 @@
  */
 package org.apache.nifi.atlas.provenance;
 
-import org.apache.atlas.model.instance.AtlasEntity;
-import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 import org.apache.nifi.provenance.ProvenanceEventType;
 
 import java.net.URI;
@@ -40,20 +38,16 @@ public abstract class AbstractNiFiProvenanceEventAnalyzer implements NiFiProvena
         }
     }
 
-    protected DataSetRefs singleDataSetRef(String componentId, ProvenanceEventType eventType, AtlasEntity entity) {
-        return singleDataSetRef(componentId, eventType, new AtlasEntityWithExtInfo(entity));
-    }
-
-    protected DataSetRefs singleDataSetRef(String componentId, ProvenanceEventType eventType, AtlasEntityWithExtInfo entityExt) {
+    protected DataSetRefs singleDataSetRef(String componentId, ProvenanceEventType eventType, DataSet dataSet) {
         final DataSetRefs refs = new DataSetRefs(componentId);
         switch (eventType) {
             case SEND:
             case REMOTE_INVOCATION:
-                refs.addOutput(entityExt);
+                refs.addOutput(dataSet);
                 break;
             case FETCH:
             case RECEIVE:
-                refs.addInput(entityExt);
+                refs.addInput(dataSet);
                 break;
         }
 

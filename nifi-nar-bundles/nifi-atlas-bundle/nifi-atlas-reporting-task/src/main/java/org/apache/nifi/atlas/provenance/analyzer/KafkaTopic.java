@@ -16,9 +16,9 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer;
 
-import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.nifi.atlas.provenance.AbstractNiFiProvenanceEventAnalyzer;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
+import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.provenance.ProvenanceEventRecord;
 import org.slf4j.Logger;
@@ -49,7 +49,7 @@ public class KafkaTopic extends AbstractNiFiProvenanceEventAnalyzer {
 
     @Override
     public DataSetRefs analyze(AnalysisContext context, ProvenanceEventRecord event) {
-        final AtlasEntity entity = new AtlasEntity(TYPE);
+        final DataSet dataSet = new DataSet(TYPE);
 
         final String transitUri = event.getTransitUri();
         if (transitUri == null) {
@@ -67,12 +67,12 @@ public class KafkaTopic extends AbstractNiFiProvenanceEventAnalyzer {
 
         final String topicName = uriMatcher.group(2);
 
-        entity.setAttribute(ATTR_NAME, topicName);
-        entity.setAttribute(ATTR_TOPIC, topicName);
-        entity.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, topicName));
-        entity.setAttribute(ATTR_URI, transitUri);
+        dataSet.setAttribute(ATTR_NAME, topicName);
+        dataSet.setAttribute(ATTR_TOPIC, topicName);
+        dataSet.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, topicName));
+        dataSet.setAttribute(ATTR_URI, transitUri);
 
-        return singleDataSetRef(event.getComponentId(), event.getEventType(), entity);
+        return singleDataSetRef(event.getComponentId(), event.getEventType(), dataSet);
     }
 
     @Override

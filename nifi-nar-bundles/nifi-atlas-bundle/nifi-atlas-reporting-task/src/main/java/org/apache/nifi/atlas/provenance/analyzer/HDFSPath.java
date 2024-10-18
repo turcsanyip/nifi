@@ -16,8 +16,8 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer;
 
-import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
+import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.provenance.ProvenanceEventRecord;
 
@@ -40,20 +40,20 @@ public class HDFSPath extends AbstractFileSystemPathAnalyzer {
 
     @Override
     public DataSetRefs analyze(AnalysisContext context, ProvenanceEventRecord event) {
-        final AtlasEntity entity = new AtlasEntity(TYPE);
+        final DataSet dataSet = new DataSet(TYPE);
         final URI uri = parseUri(event.getTransitUri());
         final String namespace = context.getNamespaceResolver().fromHostNames(uri.getHost());
 
         final String path = getPath(context, uri);
 
-        entity.setAttribute(ATTR_NAME, path);
-        entity.setAttribute(ATTR_PATH, path);
+        dataSet.setAttribute(ATTR_NAME, path);
+        dataSet.setAttribute(ATTR_PATH, path);
         // The attribute 'clusterName' is in the 'hdfs_path' Atlas entity so it cannot be changed.
         //  Using 'namespace' as value for lack of better solution.
-        entity.setAttribute(ATTR_CLUSTER_NAME, namespace);
-        entity.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, path));
+        dataSet.setAttribute(ATTR_CLUSTER_NAME, namespace);
+        dataSet.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, path));
 
-        return singleDataSetRef(event.getComponentId(), event.getEventType(), entity);
+        return singleDataSetRef(event.getComponentId(), event.getEventType(), dataSet);
     }
 
     @Override

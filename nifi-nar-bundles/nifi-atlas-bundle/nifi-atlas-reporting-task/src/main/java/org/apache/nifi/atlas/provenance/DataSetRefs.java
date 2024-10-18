@@ -16,17 +16,14 @@
  */
 package org.apache.nifi.atlas.provenance;
 
-import org.apache.atlas.model.instance.AtlasEntity;
-import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
-
 import java.util.Collections;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.Set;
 
 public class DataSetRefs {
     private final String componentId;
-    private Set<AtlasEntityWithExtInfo> inputs;
-    private Set<AtlasEntityWithExtInfo> outputs;
+    private Set<DataSet> inputs;
+    private Set<DataSet> outputs;
 
     public DataSetRefs(String componentId) {
         this.componentId = componentId;
@@ -36,32 +33,24 @@ public class DataSetRefs {
         return componentId;
     }
 
-    public Set<AtlasEntityWithExtInfo> getInputs() {
+    public Set<DataSet> getInputs() {
         return inputs != null ? inputs : Collections.emptySet();
     }
 
-    public void addInput(AtlasEntity input) {
-        addInput(new AtlasEntityWithExtInfo(input));
-    }
-
-    public void addInput(AtlasEntityWithExtInfo input) {
+    public void addInput(DataSet input) {
         if (inputs == null) {
-            inputs = new LinkedHashSet<>();
+            inputs = new HashSet<>();
         }
         inputs.add(input);
     }
 
-    public Set<AtlasEntityWithExtInfo> getOutputs() {
+    public Set<DataSet> getOutputs() {
         return outputs != null ? outputs : Collections.emptySet();
     }
 
-    public void addOutput(AtlasEntity output) {
-        addOutput(new AtlasEntityWithExtInfo(output));
-    }
-
-    public void addOutput(AtlasEntityWithExtInfo output) {
+    public void addOutput(DataSet output) {
         if (outputs == null) {
-            outputs = new LinkedHashSet<>();
+            outputs = new HashSet<>();
         }
         outputs.add(output);
     }

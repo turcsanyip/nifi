@@ -16,8 +16,8 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer;
 
-import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
+import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.controller.status.ConnectionStatus;
 import org.apache.nifi.flowfile.attributes.SiteToSiteAttributes;
@@ -68,11 +68,11 @@ public class NiFiRemotePortClient extends NiFiS2S {
 
         // The name of remote port can be retrieved from any connection, use the first one.
         final ConnectionStatus connection = connections.get(0);
-        final AtlasEntity entity = new AtlasEntity(type);
-        entity.setAttribute(ATTR_NAME, isRemoteInputPort ? connection.getDestinationName() : connection.getSourceName());
-        entity.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(s2SPort.namespace, s2SPort.targetPortId));
+        final DataSet dataSet = new DataSet(type);
+        dataSet.setAttribute(ATTR_NAME, isRemoteInputPort ? connection.getDestinationName() : connection.getSourceName());
+        dataSet.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(s2SPort.namespace, s2SPort.targetPortId));
 
-        return singleDataSetRef(event.getComponentId(), event.getEventType(), entity);
+        return singleDataSetRef(event.getComponentId(), event.getEventType(), dataSet);
     }
 
     @Override

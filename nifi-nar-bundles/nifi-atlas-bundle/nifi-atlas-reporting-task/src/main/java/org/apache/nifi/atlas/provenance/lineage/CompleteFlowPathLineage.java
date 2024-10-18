@@ -16,11 +16,11 @@
  */
 package org.apache.nifi.atlas.provenance.lineage;
 
-import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.nifi.atlas.model.NiFiFlow;
 import org.apache.nifi.atlas.model.NiFiFlowPath;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
+import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.provenance.ProvenanceEventRecord;
 import org.apache.nifi.provenance.ProvenanceEventType;
@@ -40,7 +40,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.CRC32;
 
-import static org.apache.nifi.atlas.AtlasUtils.getTypedQualifiedName;
 import static org.apache.nifi.atlas.AtlasUtils.toQualifiedName;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_NAME;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_QUALIFIED_NAME;
@@ -193,10 +192,10 @@ public class CompleteFlowPathLineage extends AbstractLineageStrategy {
         final DataSetRefs dataSetRefs = lineagePath.getRefs();
 
         // Process parents first.
-        AtlasEntity queueBetweenParent = null;
+        DataSet queueBetweenParent = null;
         if (!lineagePath.getParents().isEmpty()) {
             // Add queue between this lineage path and parent.
-            queueBetweenParent = new AtlasEntity(TYPE_NIFI_QUEUE);
+            queueBetweenParent = new DataSet(TYPE_NIFI_QUEUE);
             // The first event knows why this lineage has parents, e.g. FORK or JOIN.
             final String firstEventType = events.get(0).getEventType().name();
             queueBetweenParent.setAttribute(ATTR_NAME, firstEventType);
@@ -211,7 +210,7 @@ public class CompleteFlowPathLineage extends AbstractLineageStrategy {
         // Create a variant path.
         // Calculate a hash from component_ids and input and output resource ids.
         final Stream<String> ioIds = Stream.concat(dataSetRefs.getInputs().stream(), dataSetRefs.getOutputs()
-                .stream()).map(entityExt -> getTypedQualifiedName(entityExt.getEntity()));
+                .stream()).map(DataSet::getTypedQualifiedName);
 
         final Stream<String> parentHashes = lineagePath.getParents().stream().map(p -> String.valueOf(p.getLineagePathHash()));
         final CRC32 crc32 = new CRC32();

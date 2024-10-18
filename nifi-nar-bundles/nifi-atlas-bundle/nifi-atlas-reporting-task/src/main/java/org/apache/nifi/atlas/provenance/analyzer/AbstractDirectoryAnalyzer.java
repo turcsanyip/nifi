@@ -22,6 +22,7 @@ import org.apache.atlas.utils.PathExtractorContext;
 import org.apache.hadoop.fs.Path;
 import org.apache.nifi.atlas.provenance.AbstractNiFiProvenanceEventAnalyzer;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
+import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.provenance.ProvenanceEventRecord;
 
@@ -41,12 +42,14 @@ public abstract class AbstractDirectoryAnalyzer extends AbstractNiFiProvenanceEv
         String namespace = context.getNamespaceResolver().fromHostNames(path.toUri().getHost());
 
         PathExtractorContext pathExtractorContext = new PathExtractorContext(namespace, context.getAwsS3ModelVersion());
-        AtlasEntity.AtlasEntityWithExtInfo entityWithExtInfo = AtlasPathExtractorUtil.getPathEntity(path, pathExtractorContext);
+        AtlasEntity.AtlasEntityWithExtInfo pathEntityExt = AtlasPathExtractorUtil.getPathEntity(path, pathExtractorContext);
+
+        DataSet directoryDataSet = new DataSet(pathEntityExt.getEntity());
 
         pathExtractorContext.getKnownEntities().values().stream()
-                .filter(entity -> !entity.getGuid().equals(entityWithExtInfo.getEntity().getGuid()))
-                .forEach(entityWithExtInfo::addReferredEntity);
+                .filter(entity -> !entity.getGuid().equals(directoryDataSet.getGuid()))
+                .forEach(directoryDataSet::addReferredEntity);
 
-        return singleDataSetRef(event.getComponentId(), event.getEventType(), entityWithExtInfo);
+        return singleDataSetRef(event.getComponentId(), event.getEventType(), directoryDataSet);
     }
 }

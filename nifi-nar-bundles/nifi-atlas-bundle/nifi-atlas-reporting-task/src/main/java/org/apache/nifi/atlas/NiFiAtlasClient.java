@@ -25,7 +25,6 @@ import org.apache.atlas.model.SearchFilter;
 import org.apache.atlas.model.discovery.AtlasSearchResult;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo;
-import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.atlas.model.instance.AtlasRelationship;
 import org.apache.atlas.model.instance.EntityMutationResponse;
@@ -42,6 +41,7 @@ import org.apache.nifi.atlas.model.NiFiInputPort;
 import org.apache.nifi.atlas.model.NiFiOutputPort;
 import org.apache.nifi.atlas.model.NiFiQueue;
 import org.apache.nifi.atlas.model.RelationshipInfo;
+import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.atlas.provenance.lineage.LineageContext;
 import org.apache.nifi.processor.exception.ProcessException;
 import org.slf4j.Logger;
@@ -60,7 +60,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.apache.nifi.atlas.AtlasUtils.getTypedQualifiedName;
 import static org.apache.nifi.atlas.AtlasUtils.isGuidAssigned;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_QUALIFIED_NAME;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_URL;
@@ -341,12 +340,13 @@ public class NiFiAtlasClient implements AutoCloseable {
         createNiFiEntities(Collections.singletonList(nifiEntity));
     }
 
-    private void createNiFiEntities(final List<? extends NiFiAtlasEntity> nifiEntities)  throws AtlasServiceException { // TODO: createEntities
+    private void createNiFiEntities(final List<? extends NiFiAtlasEntity> nifiEntities)  throws AtlasServiceException {
         for (List<? extends NiFiAtlasEntity> batch : ListUtils.partition(nifiEntities, SAVE_BATCH_SIZE)) {
             final AtlasEntitiesWithExtInfo atlasEntitiesExt = new AtlasEntitiesWithExtInfo();
             batch.forEach(ne -> atlasEntitiesExt.addEntity(ne.getAtlasEntity()));
+
             final EntityMutationResponse response = atlasClient.createEntities(atlasEntitiesExt);
-            //logger.debug("Registered a new {} entities, mutation response={}", atlasEntity.getTypeName(), response); // type
+
             final Map<String, String> guidAssignments = response.getGuidAssignments();
             batch.forEach(ne -> ne.setGuid(guidAssignments.get(ne.getGuid())));
         }
@@ -360,8 +360,8 @@ public class NiFiAtlasClient implements AutoCloseable {
         for (List<? extends NiFiAtlasEntity> batch : ListUtils.partition(nifiEntities, SAVE_BATCH_SIZE)) {
             final AtlasEntitiesWithExtInfo atlasEntitiesExt = new AtlasEntitiesWithExtInfo();
             batch.forEach(ne -> atlasEntitiesExt.addEntity(ne.getAtlasEntity()));
-            final EntityMutationResponse response = atlasClient.updateEntities(atlasEntitiesExt);
-            // TODO log response
+
+            atlasClient.updateEntities(atlasEntitiesExt);
         }
     }
 
@@ -410,56 +410,46 @@ public class NiFiAtlasClient implements AutoCloseable {
     public void saveLineage(LineageContext lineageContext) throws AtlasServiceException {
         logger.debug("Saving LineageContext: {}", lineageContext);
 
-        Predicate<AtlasEntityWithExtInfo> isGuidNotAssigned = entityExt -> !isGuidAssigned(entityExt.getEntity().getGuid());
-
         Map<String, NiFiFlowPath> flowPaths = lineageContext.getFlowPaths();
         List<NiFiFlowPath> newFlowPaths = flowPaths.values().stream()
                 .filter(fp -> !isGuidAssigned(fp.getGuid()))
                 .collect(Collectors.toList());
         createNiFiEntities(newFlowPaths);
 
-        Map<String, AtlasEntityWithExtInfo> dataSets = lineageContext.getDataSets();
-        List<AtlasEntityWithExtInfo> newDataSets = dataSets.values().stream()
-                .filter(isGuidNotAssigned)
-                .peek(e -> lineageCache.getDataSetGuid(getTypedQualifiedName(e.getEntity())).ifPresent(guid -> e.getEntity().setGuid(guid)))
-                .filter(isGuidNotAssigned)
+        Map<String, DataSet> dataSets = lineageContext.getDataSets();
+        List<DataSet> newDataSets = dataSets.values().stream()
+                .filter(DataSet::isGuidNotAssigned)
+                .peek(ds -> lineageCache.getDataSetGuid(ds.getTypedQualifiedName()).ifPresent(ds::setGuid))
+                .filter(DataSet::isGuidNotAssigned)
                 .collect(Collectors.toList());
-        createEntities(newDataSets);
+        createDataSetEntities(newDataSets);
 
-        newDataSets.forEach(e -> lineageCache.addDataSetGuid(getTypedQualifiedName(e.getEntity()), e.getEntity().getGuid()));
+        newDataSets.forEach(ds -> lineageCache.addDataSetGuid(ds.getTypedQualifiedName(), ds.getGuid()));
 
         createFlowPathDataSetRelationships(flowPaths, dataSets, lineageContext.getFlowPathInputs(), RelationshipType.PROCESS_INPUT);
         createFlowPathDataSetRelationships(flowPaths, dataSets, lineageContext.getFlowPathOutputs(), RelationshipType.PROCESS_OUTPUT);
     }
 
-    private void createEntities(List<AtlasEntityWithExtInfo> entityExtList) throws AtlasServiceException {
-        for (List<AtlasEntityWithExtInfo> entityExtBatchList: ListUtils.partition(entityExtList, SAVE_BATCH_SIZE)) {
+    private void createDataSetEntities(List<DataSet> dataSets) throws AtlasServiceException {
+        for (List<DataSet> dataSetsBatch: ListUtils.partition(dataSets, SAVE_BATCH_SIZE)) {
             AtlasEntitiesWithExtInfo entitiesExt = new AtlasEntitiesWithExtInfo();
 
-            for (AtlasEntityWithExtInfo entityExt : entityExtBatchList) {
-                entitiesExt.addEntity(entityExt.getEntity());
-                if (entityExt.getReferredEntities() != null) {
-                    for (AtlasEntity referredEntity : entityExt.getReferredEntities().values()) {
-                        entitiesExt.addReferredEntity(referredEntity);
-                    }
+            for (DataSet dataSet : dataSetsBatch) {
+                entitiesExt.addEntity(dataSet.getEntity());
+                for (AtlasEntity referredEntity : dataSet.getReferredEntities()) {
+                    entitiesExt.addReferredEntity(referredEntity);
                 }
             }
 
             EntityMutationResponse response = atlasClient.createEntities(entitiesExt);
 
-            for (AtlasEntityWithExtInfo entityExt : entityExtBatchList) {
-                AtlasEntity entity = entityExt.getEntity();
-                String assignedGuid = response.getGuidAssignments().get(entity.getGuid());
-                if (assignedGuid == null) {
-                    throw new IllegalStateException("Entity creation failed for entity: " + getTypedQualifiedName(entity));
-                }
-                entity.setGuid(assignedGuid);
-            }
+            final Map<String, String> guidAssignments = response.getGuidAssignments();
+            dataSetsBatch.forEach(ds -> ds.setGuid(guidAssignments.get(ds.getGuid())));
         }
     }
 
     private void createFlowPathDataSetRelationships(Map<String, NiFiFlowPath> flowPaths,
-                                                    Map<String, AtlasEntityWithExtInfo> dataSets,
+                                                    Map<String, DataSet> dataSets,
                                                     Map<String, Set<String>> flowPathDataSets,
                                                     RelationshipType relationshipType) throws AtlasServiceException {
         for (Map.Entry<String, Set<String>> entry: flowPathDataSets.entrySet()) {
@@ -467,7 +457,7 @@ public class NiFiAtlasClient implements AutoCloseable {
             String flowPathGuid = flowPaths.get(flowPathQualifiedName).getGuid();
 
             for (String dataSetTypedQualifiedName: entry.getValue()) {
-                String dataSetGuid = dataSets.get(dataSetTypedQualifiedName).getEntity().getGuid();
+                String dataSetGuid = dataSets.get(dataSetTypedQualifiedName).getGuid();
 
                 if (lineageCache.containsRelationship(relationshipType, flowPathGuid, dataSetGuid)) {
                     // TODO: debug log

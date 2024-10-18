@@ -19,6 +19,7 @@ package org.apache.nifi.atlas.provenance.lineage;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 import org.apache.nifi.atlas.model.NiFiFlowPath;
+import org.apache.nifi.atlas.provenance.DataSet;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,8 +35,8 @@ public class LineageContext {
     // Map[FlowPath qualifiedName -> FlowPath]
     private final Map<String, NiFiFlowPath> flowPaths = new HashMap<>();
 
-    // Map[DataSet typedQualifiedName -> DataSet entity]
-    private final Map<String, AtlasEntityWithExtInfo> dataSets = new HashMap<>();
+    // Map[DataSet typedQualifiedName -> DataSet]
+    private final Map<String, DataSet> dataSets = new HashMap<>();
 
     // Map[FlowPath qualifiedName -> Set[DataSet typedQualifiedName]]
     private final Map<String, Set<String>> flowPathInputs = new HashMap<>();
@@ -45,7 +46,7 @@ public class LineageContext {
         return flowPaths;
     }
 
-    public Map<String, AtlasEntityWithExtInfo> getDataSets() {
+    public Map<String, DataSet> getDataSets() {
         return dataSets;
     }
 
@@ -57,19 +58,19 @@ public class LineageContext {
         return flowPathOutputs;
     }
 
-    public void addFlowPathInput(NiFiFlowPath flowPath, AtlasEntityWithExtInfo input) {
+    public void addFlowPathInput(NiFiFlowPath flowPath, DataSet input) {
         addFlowPathDataSet(flowPath, input, true);
     }
 
-    public void addFlowPathOutput(NiFiFlowPath flowPath, AtlasEntityWithExtInfo output) {
+    public void addFlowPathOutput(NiFiFlowPath flowPath, DataSet output) {
         addFlowPathDataSet(flowPath, output, false);
     }
 
-    private void addFlowPathDataSet(NiFiFlowPath flowPath, AtlasEntityWithExtInfo dataSet, boolean isInput) {
+    private void addFlowPathDataSet(NiFiFlowPath flowPath, DataSet dataSet, boolean isInput) {
         String flowPathQualifiedName = getQualifiedName(flowPath.getAtlasEntity()); // TODO
         flowPaths.put(flowPathQualifiedName, flowPath);
 
-        String dataSetTypedQualifiedName = getTypedQualifiedName(dataSet.getEntity());
+        String dataSetTypedQualifiedName = dataSet.getTypedQualifiedName();
         dataSets.put(dataSetTypedQualifiedName, dataSet);
 
         Set<String> flowPathDataSets = isInput
@@ -97,8 +98,7 @@ public class LineageContext {
 
     private String dataSetsToString() {
         return dataSets.values().stream()
-                .map(AtlasEntityWithExtInfo::getEntity)
-                .map(e -> getTypedQualifiedName(e) + "/" + e.getGuid())
+                .map(ds -> ds.getTypedQualifiedName() + "/" + ds.getGuid())
                 .collect(Collectors.joining(",", "[", "]"));
     }
 }

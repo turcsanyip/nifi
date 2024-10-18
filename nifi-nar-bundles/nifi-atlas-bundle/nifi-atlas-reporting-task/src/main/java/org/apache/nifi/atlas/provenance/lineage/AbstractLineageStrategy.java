@@ -21,6 +21,7 @@ import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 import org.apache.nifi.atlas.model.NiFiFlow;
 import org.apache.nifi.atlas.model.NiFiFlowPath;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
+import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzer;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzerFactory;
@@ -63,11 +64,11 @@ public abstract class AbstractLineageStrategy implements LineageStrategy {
     protected void addDataSetRefs(LineageContext lineageContext, NiFiFlowPath flowPath, DataSetRefs refs) {
         logger.debug("Adding DataSetRefs: {} {}", flowPath, refs);
 
-        for (AtlasEntityWithExtInfo input: refs.getInputs()) { // TODO: DataSet
+        for (DataSet input: refs.getInputs()) {
             lineageContext.addFlowPathInput(flowPath, input);
         }
 
-        for (AtlasEntityWithExtInfo output: refs.getOutputs()) {
+        for (DataSet output: refs.getOutputs()) {
             lineageContext.addFlowPathOutput(flowPath, output);
         }
     }

@@ -412,12 +412,11 @@ public class NiFiAtlasClient implements AutoCloseable {
 
         Predicate<AtlasEntityWithExtInfo> isGuidNotAssigned = entityExt -> !isGuidAssigned(entityExt.getEntity().getGuid());
 
-        Map<String, AtlasEntity> flowPaths = lineageContext.getFlowPaths();
-        List<AtlasEntityWithExtInfo> newFlowPaths = flowPaths.values().stream()
-                .map(AtlasEntityWithExtInfo::new)
-                .filter(isGuidNotAssigned)
+        Map<String, NiFiFlowPath> flowPaths = lineageContext.getFlowPaths();
+        List<NiFiFlowPath> newFlowPaths = flowPaths.values().stream()
+                .filter(fp -> !isGuidAssigned(fp.getGuid()))
                 .collect(Collectors.toList());
-        createEntities(newFlowPaths);
+        createNiFiEntities(newFlowPaths);
 
         Map<String, AtlasEntityWithExtInfo> dataSets = lineageContext.getDataSets();
         List<AtlasEntityWithExtInfo> newDataSets = dataSets.values().stream()
@@ -459,7 +458,7 @@ public class NiFiAtlasClient implements AutoCloseable {
         }
     }
 
-    private void createFlowPathDataSetRelationships(Map<String, AtlasEntity> flowPaths,
+    private void createFlowPathDataSetRelationships(Map<String, NiFiFlowPath> flowPaths,
                                                     Map<String, AtlasEntityWithExtInfo> dataSets,
                                                     Map<String, Set<String>> flowPathDataSets,
                                                     RelationshipType relationshipType) throws AtlasServiceException {

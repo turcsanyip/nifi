@@ -16,8 +16,8 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer.unknown;
 
-import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
+import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.provenance.ProvenanceEventRecord;
 
@@ -28,8 +28,8 @@ public abstract class UnknownOutput extends UnknownDataSet {
 
         final String componentId = event.getComponentId();
         final DataSetRefs refs = new DataSetRefs(componentId);
-        final AtlasEntity entity = createDataSetEntity(context, event);
-        refs.addOutput(entity);
+        final DataSet dataSet = createDataSet(context, event);
+        refs.addOutput(dataSet);
 
         return refs;
     }

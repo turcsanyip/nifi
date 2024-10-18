@@ -16,11 +16,9 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer;
 
-import org.apache.atlas.model.instance.AtlasEntity;
-import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityExtInfo;
-import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.nifi.atlas.provenance.AbstractNiFiProvenanceEventAnalyzer;
+import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.util.Tuple;
 
 import static org.apache.nifi.atlas.AtlasUtils.toQualifiedName;
@@ -35,25 +33,28 @@ public abstract class AbstractHiveAnalyzer extends AbstractNiFiProvenanceEventAn
     static final String TYPE_TABLE = "hive_table";
     static final String ATTR_DB = "db";
 
-    protected AtlasEntity createDatabaseEntity(String namespace, String databaseName) {
-        final AtlasEntity databaseEntity = new AtlasEntity(TYPE_DATABASE);
-        databaseEntity.setAttribute(ATTR_NAME, databaseName);
+    private DataSet createDatabaseDataSet(String namespace, String databaseName) {
+        final DataSet databaseDataSet = new DataSet(TYPE_DATABASE);
+        databaseDataSet.setAttribute(ATTR_NAME, databaseName);
         // The attribute 'clusterName' is in the 'hive_db' Atlas entity so it cannot be changed.
         //  Using 'namespace' as value for lack of better solution.
-        databaseEntity.setAttribute(ATTR_CLUSTER_NAME, namespace);
-        databaseEntity.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, databaseName));
-        return databaseEntity;
+        databaseDataSet.setAttribute(ATTR_CLUSTER_NAME, namespace);
+        databaseDataSet.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, databaseName));
+        return databaseDataSet;
     }
 
-    protected AtlasEntityWithExtInfo createTableEntity(String namespace, Tuple<String, String> tableName) {
-        final AtlasEntity databaseEntity = createDatabaseEntity(namespace, tableName.getKey());
+    protected DataSet createTableDataSet(String namespace, Tuple<String, String> tableName) {
+        final DataSet databaseDataSet = createDatabaseDataSet(namespace, tableName.getKey());
 
-        final AtlasEntity tableEntity = new AtlasEntity(TYPE_TABLE);
-        tableEntity.setAttribute(ATTR_NAME, tableName.getValue());
-        tableEntity.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, toTableNameStr(tableName)));
-        tableEntity.setAttribute(ATTR_DB, new AtlasObjectId(databaseEntity.getGuid()));
+        final DataSet tableDataSet = new DataSet(TYPE_TABLE);
 
-        return new AtlasEntityWithExtInfo(tableEntity, new AtlasEntityExtInfo(databaseEntity));
+        tableDataSet.setAttribute(ATTR_NAME, tableName.getValue());
+        tableDataSet.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, toTableNameStr(tableName)));
+        tableDataSet.setAttribute(ATTR_DB, new AtlasObjectId(databaseDataSet.getGuid()));
+
+        tableDataSet.addReferredEntity(databaseDataSet);
+
+        return tableDataSet;
     }
 
 }

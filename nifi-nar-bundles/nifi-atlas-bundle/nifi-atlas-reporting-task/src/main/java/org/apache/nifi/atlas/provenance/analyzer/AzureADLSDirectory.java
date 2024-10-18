@@ -17,13 +17,13 @@
 package org.apache.nifi.atlas.provenance.analyzer;
 
 import org.apache.atlas.model.instance.AtlasEntity;
-import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.atlas.utils.AtlasPathExtractorUtil;
 import org.apache.atlas.utils.PathExtractorContext;
 import org.apache.hadoop.fs.Path;
 import org.apache.nifi.atlas.provenance.AbstractNiFiProvenanceEventAnalyzer;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
+import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.provenance.ProvenanceEventRecord;
 
@@ -71,23 +71,23 @@ public class AzureADLSDirectory extends AbstractNiFiProvenanceEventAnalyzer {
         String namespace = context.getNamespaceResolver().fromHostNames(path.toUri().getHost());
 
         PathExtractorContext pathExtractorContext = new PathExtractorContext(namespace);
-        AtlasEntityWithExtInfo fileEntityExt = AtlasPathExtractorUtil.getPathEntity(path, pathExtractorContext);
+        AtlasEntity.AtlasEntityWithExtInfo fileEntityExt = AtlasPathExtractorUtil.getPathEntity(path, pathExtractorContext);
 
         // the last component of the URI is returned as a directory object but in fact it refers the filename
         AtlasEntity fileEntity = fileEntityExt.getEntity();
         AtlasObjectId parentObjectId = (AtlasObjectId) fileEntity.getRelationshipAttribute(ATTR_PARENT);
         if (parentObjectId != null) {
-            AtlasEntity parentEntity = pathExtractorContext.getKnownEntities().get(parentObjectId.getUniqueAttributes().get(ATTR_QUALIFIED_NAME));
+            AtlasEntity parentEntity = pathExtractorContext.getKnownEntities().get((String) parentObjectId.getUniqueAttributes().get(ATTR_QUALIFIED_NAME));
 
             if (parentEntity != null) {
-                AtlasEntityWithExtInfo parentEntityExt = new AtlasEntityWithExtInfo(parentEntity);
+                DataSet parentDataSet = new DataSet(parentEntity);
 
                 pathExtractorContext.getKnownEntities().values().stream()
                         .filter(entity -> !entity.getGuid().equals(fileEntity.getGuid()))
                         .filter(entity -> !entity.getGuid().equals(parentEntity.getGuid()))
-                        .forEach(parentEntityExt::addReferredEntity);
+                        .forEach(parentDataSet::addReferredEntity);
 
-                return singleDataSetRef(event.getComponentId(), event.getEventType(), parentEntityExt);
+                return singleDataSetRef(event.getComponentId(), event.getEventType(), parentDataSet);
             }
         }
 

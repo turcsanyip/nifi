@@ -17,22 +17,21 @@
 package org.apache.nifi.atlas.model;
 
 import org.apache.atlas.model.instance.AtlasEntity;
+import org.apache.nifi.atlas.AtlasUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.nifi.atlas.AtlasUtils.getComponentIdFromQualifiedName;
-import static org.apache.nifi.atlas.AtlasUtils.getQualifiedName;
-import static org.apache.nifi.atlas.AtlasUtils.toQualifiedName;
-import static org.apache.nifi.atlas.AtlasUtils.toStr;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_DESCRIPTION;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_NAME;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_QUALIFIED_NAME;
 
-class AbstractNiFiAtlasEntity implements NiFiAtlasEntity {
+abstract class AbstractNiFiAtlasEntity implements NiFiAtlasEntity {
 
     private final String id;
+
+    private final String qualifiedName;
 
     private final AtlasEntity atlasEntity;
 
@@ -42,14 +41,16 @@ class AbstractNiFiAtlasEntity implements NiFiAtlasEntity {
 
     protected AbstractNiFiAtlasEntity(String typeName, String id, String namespace) {
         this.id = id;
-        this.atlasEntity = new AtlasEntity(typeName, ATTR_QUALIFIED_NAME, toQualifiedName(namespace, id));
+        this.qualifiedName = AtlasUtils.toQualifiedName(namespace, this.id);
+        this.atlasEntity = new AtlasEntity(typeName, ATTR_QUALIFIED_NAME, this.qualifiedName);
 
         notifyCreated();
     }
 
     protected AbstractNiFiAtlasEntity(AtlasEntity atlasEntity) {
-        this.id = getComponentIdFromQualifiedName(getQualifiedName(atlasEntity));
         this.atlasEntity = atlasEntity;
+        this.qualifiedName = AtlasUtils.getQualifiedName(this.atlasEntity);
+        this.id = AtlasUtils.getComponentIdFromQualifiedName(this.qualifiedName);
 
         notifyFetched();
     }
@@ -57,6 +58,11 @@ class AbstractNiFiAtlasEntity implements NiFiAtlasEntity {
     @Override
     public String getId() {
         return id;
+    }
+
+    @Override
+    public String getQualifiedName() {
+        return qualifiedName;
     }
 
     @Override
@@ -116,7 +122,7 @@ class AbstractNiFiAtlasEntity implements NiFiAtlasEntity {
     }
 
     protected String getStringAttribute(String attributeName) {
-        return toStr(getAttribute(attributeName));
+        return AtlasUtils.toStr(getAttribute(attributeName));
     }
 
     protected void setStringAttribute(String attributeName, String newValue) {

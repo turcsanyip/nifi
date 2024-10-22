@@ -20,7 +20,9 @@ import org.apache.atlas.model.instance.AtlasEntity;
 
 public interface NiFiAtlasEntity {
 
-    String getId(); // TODO: qualifiedName ??
+    String getId();
+
+    String getQualifiedName();
 
     AtlasEntity getAtlasEntity();
 

@@ -25,8 +25,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.apache.nifi.atlas.AtlasUtils.getQualifiedName;
-
 public class LineageContext {
 
     // Map[FlowPath qualifiedName -> FlowPath]
@@ -64,7 +62,7 @@ public class LineageContext {
     }
 
     private void addFlowPathDataSet(NiFiFlowPath flowPath, DataSet dataSet, boolean isInput) {
-        String flowPathQualifiedName = getQualifiedName(flowPath.getAtlasEntity()); // TODO
+        String flowPathQualifiedName = flowPath.getQualifiedName();
         flowPaths.put(flowPathQualifiedName, flowPath);
 
         String dataSetTypedQualifiedName = dataSet.getTypedQualifiedName();
@@ -89,7 +87,7 @@ public class LineageContext {
 
     private String flowPathsToString() {
         return flowPaths.values().stream()
-                .map(fp -> getQualifiedName(fp.getAtlasEntity()) + "/" + fp.getGuid()) // TODO
+                .map(fp -> fp.getQualifiedName() + "/" + fp.getGuid())
                 .collect(Collectors.joining(",", "[", "]"));
     }
 

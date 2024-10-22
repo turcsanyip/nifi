@@ -409,6 +409,7 @@ public class NiFiAtlasClient implements AutoCloseable {
 
     public void saveLineage(LineageContext lineageContext) throws AtlasServiceException {
         logger.debug("Saving LineageContext: {}", lineageContext);
+        logger.debug("Current LineageCache: {}", lineageCache);
 
         Map<String, NiFiFlowPath> flowPaths = lineageContext.getFlowPaths();
         List<NiFiFlowPath> newFlowPaths = flowPaths.values().stream()
@@ -416,21 +417,29 @@ public class NiFiAtlasClient implements AutoCloseable {
                 .collect(Collectors.toList());
         createNiFiEntities(newFlowPaths);
 
+        Counter dataSetCounter = new Counter("DataSet");
         Map<String, DataSet> dataSets = lineageContext.getDataSets();
         List<DataSet> newDataSets = dataSets.values().stream()
                 .filter(DataSet::isGuidNotAssigned)
-                .peek(ds -> lineageCache.getDataSetGuid(ds.getTypedQualifiedName()).ifPresent(ds::setGuid))
+                .peek(ds -> lineageCache.getDataSetGuid(ds.getTypedQualifiedName())
+                        .ifPresent(guid -> {
+                            ds.setGuid(guid);
+                            dataSetCounter.cached++;
+                        }))
                 .filter(DataSet::isGuidNotAssigned)
                 .collect(Collectors.toList());
-        createDataSetEntities(newDataSets);
+        createDataSetEntities(newDataSets, dataSetCounter);
+        logCounter(dataSetCounter);
 
         newDataSets.forEach(ds -> lineageCache.addDataSetGuid(ds.getTypedQualifiedName(), ds.getGuid()));
 
-        createFlowPathDataSetRelationships(flowPaths, dataSets, lineageContext.getFlowPathInputs(), RelationshipType.PROCESS_INPUT);
-        createFlowPathDataSetRelationships(flowPaths, dataSets, lineageContext.getFlowPathOutputs(), RelationshipType.PROCESS_OUTPUT);
+        Counter relationshipCounter = new Counter("Relationship");
+        createFlowPathDataSetRelationships(flowPaths, dataSets, lineageContext.getFlowPathInputs(), RelationshipType.PROCESS_INPUT, relationshipCounter);
+        createFlowPathDataSetRelationships(flowPaths, dataSets, lineageContext.getFlowPathOutputs(), RelationshipType.PROCESS_OUTPUT, relationshipCounter);
+        logCounter(relationshipCounter);
     }
 
-    private void createDataSetEntities(List<DataSet> dataSets) throws AtlasServiceException {
+    private void createDataSetEntities(List<DataSet> dataSets, Counter counter) throws AtlasServiceException {
         for (List<DataSet> dataSetsBatch: ListUtils.partition(dataSets, SAVE_BATCH_SIZE)) {
             AtlasEntitiesWithExtInfo entitiesExt = new AtlasEntitiesWithExtInfo();
 
@@ -445,13 +454,18 @@ public class NiFiAtlasClient implements AutoCloseable {
 
             final Map<String, String> guidAssignments = response.getGuidAssignments();
             dataSetsBatch.forEach(ds -> ds.setGuid(guidAssignments.get(ds.getGuid())));
+
+            int createdCount = response.getCreatedEntities() != null ? response.getCreatedEntities().size() : 0;
+            counter.created += createdCount;
+            counter.existed += dataSetsBatch.size() - createdCount;
         }
     }
 
     private void createFlowPathDataSetRelationships(Map<String, NiFiFlowPath> flowPaths,
                                                     Map<String, DataSet> dataSets,
                                                     Map<String, Set<String>> flowPathDataSets,
-                                                    RelationshipType relationshipType) throws AtlasServiceException {
+                                                    RelationshipType relationshipType,
+                                                    Counter counter) throws AtlasServiceException {
         for (Map.Entry<String, Set<String>> entry: flowPathDataSets.entrySet()) {
             String flowPathQualifiedName = entry.getKey();
             String flowPathGuid = flowPaths.get(flowPathQualifiedName).getGuid();
@@ -460,7 +474,7 @@ public class NiFiAtlasClient implements AutoCloseable {
                 String dataSetGuid = dataSets.get(dataSetTypedQualifiedName).getGuid();
 
                 if (lineageCache.containsRelationship(relationshipType, flowPathGuid, dataSetGuid)) {
-                    // TODO: debug log
+                    counter.cached++;
                     continue;
                 }
 
@@ -471,11 +485,13 @@ public class NiFiAtlasClient implements AutoCloseable {
 
                 try {
                     atlasClient.createRelationship(relationship);
+                    counter.created++;
                 } catch (AtlasServiceException ase) {
                     if (ase.getStatus() == ClientResponse.Status.CONFLICT) {
                         // the relationship has already been created by another node in the cluster or during earlier execution of the reporting task
                         logger.info("Relationship already exists. FlowPath: guid={} / qualifiedName={}, DataSet: guid={} / typedQualifiedName={}",
                                 flowPathGuid, flowPathQualifiedName, dataSetGuid, dataSetTypedQualifiedName);
+                        counter.existed++;
                     } else {
                         throw ase;
                     }
@@ -483,6 +499,22 @@ public class NiFiAtlasClient implements AutoCloseable {
 
                 lineageCache.addRelationship(relationshipType, flowPathGuid, dataSetGuid);
             }
+        }
+    }
+
+    private void logCounter(Counter counter) {
+        logger.debug("{} counter: [cached={}, created={}, existed={}]", counter.name, counter.cached, counter.created, counter.existed);
+    }
+
+    private static class Counter {
+        final String name;
+
+        int cached = 0;
+        int created = 0;
+        int existed = 0;
+
+        Counter(String name) {
+            this.name = name;
         }
     }
 

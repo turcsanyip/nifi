@@ -43,8 +43,6 @@ public class NiFiFlowAnalyzer {
 
     private final Set<String> traversedPathIds = new HashSet<>();
 
-    // TODO: sort methods
-
     private NiFiFlowAnalyzer() {
     }
 

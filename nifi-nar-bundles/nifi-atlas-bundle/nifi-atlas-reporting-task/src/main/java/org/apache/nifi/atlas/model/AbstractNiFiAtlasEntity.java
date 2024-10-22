@@ -37,7 +37,7 @@ abstract class AbstractNiFiAtlasEntity implements NiFiAtlasEntity {
 
     private EntityState state;
 
-    protected final List<String> updateAudit = new ArrayList<>(); // TODO: check what were added
+    protected final List<String> updateAudit = new ArrayList<>();
 
     protected AbstractNiFiAtlasEntity(String typeName, String id, String namespace) {
         this.id = id;

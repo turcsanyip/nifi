@@ -60,4 +60,12 @@ public class LineageCache {
     private String getRelationshipKey(RelationshipType relationshipType, String flowPathGuid, String dataSetGuid) {
         return String.format("%s_%s_%s", relationshipType.getCode(), flowPathGuid, dataSetGuid);
     }
+
+    @Override
+    public String toString() {
+        return "LineageCache{" +
+                "dataSetCache=" + dataSetCache.asMap() +
+                ", relationshipCache=" + relationshipCache.asMap().keySet() +
+                '}';
+    }
 }

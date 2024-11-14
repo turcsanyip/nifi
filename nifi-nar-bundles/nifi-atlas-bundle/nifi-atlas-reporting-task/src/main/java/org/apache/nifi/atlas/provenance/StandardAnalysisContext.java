@@ -19,6 +19,7 @@ package org.apache.nifi.atlas.provenance;
 import org.apache.nifi.atlas.model.NiFiFlow;
 import org.apache.nifi.atlas.resolver.NamespaceResolver;
 import org.apache.nifi.controller.status.ConnectionStatus;
+import org.apache.nifi.controller.status.PortStatus;
 import org.apache.nifi.provenance.ProvenanceEventRecord;
 import org.apache.nifi.provenance.ProvenanceRepository;
 import org.apache.nifi.provenance.lineage.ComputeLineageResult;
@@ -56,6 +57,16 @@ public class StandardAnalysisContext implements AnalysisContext {
     @Override
     public List<ConnectionStatus> findConnectionFrom(String componentId) {
         return nifiFlow.getOutgoingConnections(componentId);
+    }
+
+    @Override
+    public PortStatus getRemoteInputPort(String componentId) {
+        return nifiFlow.getRemoteInputPorts().get(componentId);
+    }
+
+    @Override
+    public PortStatus getRemoteOutputPort(String componentId) {
+        return nifiFlow.getRemoteOutputPorts().get(componentId);
     }
 
     @Override

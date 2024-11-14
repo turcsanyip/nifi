@@ -31,10 +31,11 @@ import org.apache.nifi.provenance.lineage.LineageNodeType;
 import java.util.List;
 
 import static org.apache.nifi.atlas.AtlasUtils.toQualifiedName;
-import static org.apache.nifi.atlas.model.NiFiFlowPath.createDeepLinkUrl;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_NAME;
+import static org.apache.nifi.atlas.NiFiTypes.ATTR_NIFI_FLOW;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_QUALIFIED_NAME;
 import static org.apache.nifi.atlas.NiFiTypes.TYPE_NIFI_QUEUE;
+import static org.apache.nifi.atlas.model.NiFiFlowPath.createDeepLinkUrl;
 
 public class SimpleFlowPathLineage extends AbstractLineageStrategy {
 
@@ -67,7 +68,7 @@ public class SimpleFlowPathLineage extends AbstractLineageStrategy {
         final boolean isRemoteInputPort = "Remote Input Port".equals(event.getComponentType());
 
         // Create a RemoteInputPort Process.
-        // event.getComponentId returns UUID for RemoteGroupPort as a client of S2S, and it's different from a remote port UUID (portDataSetId).
+        // event.getComponentId returns UUID for Remote Process Group Port as a client of S2S, and it's different from a remote port UUID (portDataSetId).
         // See NIFI-4571 for detail.
         final DataSet remotePortDataSet = isRemoteInputPort ? analyzedRefs.getOutputs().iterator().next() : analyzedRefs.getInputs().iterator().next();
         final String portProcessId = event.getComponentId();
@@ -75,10 +76,13 @@ public class SimpleFlowPathLineage extends AbstractLineageStrategy {
         final NiFiFlowPath remotePortProcess = new NiFiFlowPath(portProcessId, nifiFlow.getNamespace());
         remotePortProcess.setName(event.getComponentType());
         remotePortProcess.addProcessComponent(portProcessId);
+        remotePortProcess.setNiFiFlow(nifiFlow.getAtlasObjectId());
 
         // For RemoteInputPort, need to find the previous component connected to this port,
         // which passed this particular FlowFile.
         // That is only possible by calling lineage API.
+        // Known issue: the RemoteInputPort will be connected to the last upstream FlowPath that emitted a provenance event
+        // which may not be the directly connected incoming FlowPath (if it does not produce provenance events)
         if (isRemoteInputPort) {
             final ProvenanceEventRecord previousEvent = findPreviousProvenanceEvent(analysisContext, event);
             if (previousEvent == null) {
@@ -100,12 +104,12 @@ public class SimpleFlowPathLineage extends AbstractLineageStrategy {
             DataSet queueFromStaticFlowPathToRemotePortProcess = new DataSet(TYPE_NIFI_QUEUE);
             queueFromStaticFlowPathToRemotePortProcess.setAttribute(ATTR_NAME, "queue");
             queueFromStaticFlowPathToRemotePortProcess.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(nifiFlow.getNamespace(), portProcessId));
+            queueFromStaticFlowPathToRemotePortProcess.setAttribute(ATTR_NIFI_FLOW, nifiFlow.getAtlasObjectId());
 
             // Create lineage: Static flow_path -> queue
             DataSetRefs staticFlowPathRefs = new DataSetRefs(previousEvent.getComponentId());
             staticFlowPathRefs.addOutput(queueFromStaticFlowPathToRemotePortProcess);
             addDataSetRefs(lineageContext, nifiFlow, staticFlowPathRefs);
-
 
             // Create lineage: Queue -> RemoteInputPort process -> RemoteInputPort dataSet
             DataSetRefs remotePortRefs = new DataSetRefs(portProcessId);
@@ -130,7 +134,6 @@ public class SimpleFlowPathLineage extends AbstractLineageStrategy {
             // Create lineage: RemoteOutputPort dataSet -> RemoteOutputPort process
             DataSetRefs remotePortRefs = new DataSetRefs(portProcessId);
             remotePortRefs.addInput(remotePortDataSet);
-            addDataSetRefs(lineageContext, remotePortProcess, remotePortRefs);
 
             for (ConnectionStatus connection : connections) {
                 final String destinationId = connection.getDestinationId();
@@ -147,22 +150,22 @@ public class SimpleFlowPathLineage extends AbstractLineageStrategy {
                 DataSet queueFromRemotePortProcessToStaticFlowPath = new DataSet(TYPE_NIFI_QUEUE);
                 queueFromRemotePortProcessToStaticFlowPath.setAttribute(ATTR_NAME, "queue");
                 queueFromRemotePortProcessToStaticFlowPath.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(nifiFlow.getNamespace(), destinationId));
+                queueFromRemotePortProcessToStaticFlowPath.setAttribute(ATTR_NIFI_FLOW, nifiFlow.getAtlasObjectId());
 
                 // Create lineage: Queue -> Static flow_path
                 DataSetRefs staticFlowPathRefs = new DataSetRefs(destinationId);
                 staticFlowPathRefs.addInput(queueFromRemotePortProcessToStaticFlowPath);
                 addDataSetRefs(lineageContext, nifiFlow, staticFlowPathRefs);
 
-                // Create lineage: RemoteOutputPort dataSet -> RemoteOutputPort process -> Queue
+                // Create lineage: RemoteOutputPort process -> Queue
                 remotePortRefs.addOutput(queueFromRemotePortProcessToStaticFlowPath);
-                addDataSetRefs(lineageContext, remotePortProcess, remotePortRefs);
             }
 
+            addDataSetRefs(lineageContext, remotePortProcess, remotePortRefs);
+
             // Add RemoteOutputPort process, so that it can be found even if it is connected to RemoteInputPort directly without any processor in between.
-            nifiFlow.getFlowPaths().put(remotePortProcess.getId(), remotePortProcess); // TODO: will not be persisted!! set niFI flow reference
-
+            nifiFlow.getFlowPaths().put(remotePortProcess.getId(), remotePortProcess);
         }
-
     }
 
     private ProvenanceEventRecord findPreviousProvenanceEvent(AnalysisContext context, ProvenanceEventRecord event) {

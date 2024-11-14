@@ -17,11 +17,12 @@
 package org.apache.nifi.atlas.provenance.analyzer;
 
 import org.apache.nifi.atlas.provenance.AbstractNiFiProvenanceEventAnalyzer;
-import org.apache.nifi.atlas.resolver.NamespaceResolver;
+import org.apache.nifi.atlas.provenance.AnalysisContext;
 import org.apache.nifi.provenance.ProvenanceEventRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,58 +31,39 @@ public abstract class NiFiS2S extends AbstractNiFiProvenanceEventAnalyzer {
     private static final Logger logger = LoggerFactory.getLogger(NiFiS2S.class);
 
     private static final Pattern RAW_URL_REGEX = Pattern.compile("nifi://([^:/]+):\\d+/([0-9a-zA-Z\\-]+)");
-    private static final Pattern HTTP_URL_REGEX = Pattern.compile(".*/nifi-api/data-transfer/(in|out)put-ports/([[0-9a-zA-Z\\-]]+)/transactions/.*");
+    private static final Pattern HTTP_URL_REGEX = Pattern.compile(".*/nifi-api/data-transfer/(in|out)put-ports/([0-9a-zA-Z\\-]+)/transactions/.*");
 
-    protected S2SPort analyzeS2SPort(ProvenanceEventRecord event, NamespaceResolver namespaceResolver) {
+    protected URI parseTransitUri(ProvenanceEventRecord event) {
         final String transitUri = event.getTransitUri();
-        final int protocolIndex = transitUri.indexOf(':');
-        final String protocol = transitUri.substring(0, protocolIndex).toLowerCase();
 
-        final String targetHostname;
-        final String targetPortId;
+        final URI uri = parseUri(transitUri);
+        final String protocol = uri.getScheme();
+
         switch (protocol) {
-
             case "http":
-            case "https": {
-                final Matcher uriMatcher = matchUrl(transitUri, HTTP_URL_REGEX);
-                targetHostname = parseUri(transitUri).getHost();
-                targetPortId = uriMatcher.group(2);
-            }
-            break;
+            case "https":
+                matchUrl(transitUri, HTTP_URL_REGEX);
+                break;
 
-            case "nifi": {
-                final Matcher uriMatcher = matchUrl(transitUri, RAW_URL_REGEX);
-                targetHostname = uriMatcher.group(1);
-                targetPortId = getRawProtocolPortId(event);
-            }
-            break;
+            case "nifi":
+                matchUrl(transitUri, RAW_URL_REGEX);
+                break;
 
             default:
-                throw new IllegalArgumentException("Protocol " + protocol + " is not supported as NiFi S2S transit URL.");
-
+                throw new IllegalArgumentException("Protocol " + protocol + " is not supported as NiFi S2S Transit URI.");
         }
 
-        final String namespace = namespaceResolver.fromHostNames(targetHostname);
-        return new S2SPort(namespace, targetPortId);
+        return uri;
     }
 
-    abstract protected String getRawProtocolPortId(ProvenanceEventRecord event);
+    protected String getNamespace(AnalysisContext context, URI uri) {
+        return context.getNamespaceResolver().fromHostNames(uri.getHost());
+    }
 
-    private Matcher matchUrl(String url, Pattern pattern) {
+    private void matchUrl(String url, Pattern pattern) {
         final Matcher uriMatcher = pattern.matcher(url);
         if (!uriMatcher.matches()) {
-            throw new IllegalArgumentException("Unexpected transit URI: " + url);
-        }
-        return uriMatcher;
-    }
-
-    protected static class S2SPort {
-        final String namespace;
-        final String targetPortId;
-
-        public S2SPort(String namespace, String targetPortId) {
-            this.namespace = namespace;
-            this.targetPortId = targetPortId;
+            throw new IllegalArgumentException("Unexpected Transit URI: " + url);
         }
     }
 

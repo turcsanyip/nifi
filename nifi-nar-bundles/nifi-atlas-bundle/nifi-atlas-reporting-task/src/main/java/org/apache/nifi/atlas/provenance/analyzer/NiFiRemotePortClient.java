@@ -26,6 +26,7 @@ import org.apache.nifi.provenance.ProvenanceEventType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
 import java.util.List;
 
 import static org.apache.nifi.atlas.AtlasUtils.toQualifiedName;
@@ -51,37 +52,36 @@ public class NiFiRemotePortClient extends NiFiS2S {
             return null;
         }
 
+        final URI uri = parseTransitUri(event);
+        final String namespace = getNamespace(context, uri);
+
         final boolean isRemoteInputPort = event.getComponentType().equals("Remote Input Port");
         final String type = isRemoteInputPort ? TYPE_NIFI_INPUT_PORT : TYPE_NIFI_OUTPUT_PORT;
 
-        final S2SPort s2SPort = analyzeS2SPort(event, context.getNamespaceResolver());
+        final String remotePortId = event.getAttribute(SiteToSiteAttributes.S2S_PORT_ID.key());
 
-        // Find connections that connects to/from the remote port.
-        final String componentId = event.getComponentId();
+        // Find connections that connects to/from the Remote Process Group Port.
+        final String rpgPortId = event.getComponentId();
         final List<ConnectionStatus> connections = isRemoteInputPort
-                ? context.findConnectionTo(componentId)
-                : context.findConnectionFrom(componentId);
+                ? context.findConnectionTo(rpgPortId)
+                : context.findConnectionFrom(rpgPortId);
         if (connections == null || connections.isEmpty()) {
             logger.warn("Connection was not found: {}", event);
             return null;
         }
-
         // The name of remote port can be retrieved from any connection, use the first one.
         final ConnectionStatus connection = connections.get(0);
-        final DataSet dataSet = new DataSet(type);
-        dataSet.setAttribute(ATTR_NAME, isRemoteInputPort ? connection.getDestinationName() : connection.getSourceName());
-        dataSet.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(s2SPort.namespace, s2SPort.targetPortId));
+        final String remotePortName = isRemoteInputPort ? connection.getDestinationName() : connection.getSourceName();
 
-        return singleDataSetRef(event.getComponentId(), event.getEventType(), dataSet);
+        final DataSet dataSet = new DataSet(type);
+        dataSet.setAttribute(ATTR_NAME, remotePortName);
+        dataSet.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, remotePortId));
+
+        return singleDataSetRef(rpgPortId, event.getEventType(), dataSet);
     }
 
     @Override
     public String targetComponentTypePattern() {
         return "^Remote (In|Out)put Port$";
-    }
-
-    @Override
-    protected String getRawProtocolPortId(ProvenanceEventRecord event) {
-        return event.getAttribute(SiteToSiteAttributes.S2S_PORT_ID.key());
     }
 }

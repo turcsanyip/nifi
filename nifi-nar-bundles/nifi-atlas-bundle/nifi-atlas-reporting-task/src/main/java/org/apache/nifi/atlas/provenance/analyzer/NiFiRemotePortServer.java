@@ -19,13 +19,13 @@ package org.apache.nifi.atlas.provenance.analyzer;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
 import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
-import org.apache.nifi.controller.status.ConnectionStatus;
+import org.apache.nifi.controller.status.PortStatus;
 import org.apache.nifi.provenance.ProvenanceEventRecord;
 import org.apache.nifi.provenance.ProvenanceEventType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
+import java.net.URI;
 
 import static org.apache.nifi.atlas.AtlasUtils.toQualifiedName;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_NAME;
@@ -50,37 +50,33 @@ public class NiFiRemotePortServer extends NiFiS2S {
             return null;
         }
 
+        final URI uri = parseTransitUri(event);
+        final String namespace = getNamespace(context, uri);
+
         final boolean isInputPort = event.getComponentType().equals("Input Port");
         final String type = isInputPort ? TYPE_NIFI_INPUT_PORT : TYPE_NIFI_OUTPUT_PORT;
+
         final String remotePortId = event.getComponentId();
 
-        final S2SPort s2SPort = analyzeS2SPort(event, context.getNamespaceResolver());
-
-        // Find connections connecting to/from the remote port.
-        final List<ConnectionStatus> connections = isInputPort
-                ? context.findConnectionFrom(remotePortId)
-                : context.findConnectionTo(remotePortId);
-        if (connections == null || connections.isEmpty()) {
-            logger.warn("Connection was not found: {}", event);
+        // Find remote port.
+        final PortStatus remotePort = isInputPort
+                ? context.getRemoteInputPort(remotePortId)
+                : context.getRemoteOutputPort(remotePortId);
+        if (remotePort == null) {
+            logger.warn("Remote Port was not found: {}", event);
             return null;
         }
+        final String remotePortName = remotePort.getName();
 
-        // The name of the port can be retrieved from any connection, use the first one.
-        final ConnectionStatus connection = connections.get(0);
         final DataSet dataSet = new DataSet(type);
-        dataSet.setAttribute(ATTR_NAME, isInputPort ? connection.getSourceName() : connection.getDestinationName());
-        dataSet.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(s2SPort.namespace, remotePortId));
+        dataSet.setAttribute(ATTR_NAME, remotePortName);
+        dataSet.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, remotePortId));
 
-        return singleDataSetRef(event.getComponentId(), event.getEventType(), dataSet);
+        return singleDataSetRef(remotePortId, event.getEventType(), dataSet);
     }
 
     @Override
     public String targetComponentTypePattern() {
         return "^(In|Out)put Port$";
-    }
-
-    @Override
-    protected String getRawProtocolPortId(ProvenanceEventRecord event) {
-        return event.getComponentId();
     }
 }

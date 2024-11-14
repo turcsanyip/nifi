@@ -196,7 +196,7 @@ public class NiFiFlow extends AbstractNiFiAtlasEntity {
         if (changed) {
             final List<AtlasObjectId> objectIds = flowComponents.values().stream()
                     .filter(NiFiAtlasEntity::isActive)
-                    .map(fc -> new AtlasObjectId(fc.getGuid()))
+                    .map(NiFiAtlasEntity::getAtlasObjectId)
                     .collect(Collectors.toList());
 
             setAttribute(attributeName, objectIds);
@@ -246,7 +246,8 @@ public class NiFiFlow extends AbstractNiFiAtlasEntity {
     /**
      * Find the flow_path that contains the specified componentId.
      */
-    public NiFiFlowPath findPath(String componentId) { // TODO
+    public NiFiFlowPath findPath(String componentId) {
+        // look up flow paths dynamically because SimpleFlowPathLineage may insert new items
         for (NiFiFlowPath path: flowPaths.values()) {
             if (path.getProcessComponents().contains(componentId)){
                 return path;

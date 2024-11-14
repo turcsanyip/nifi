@@ -312,7 +312,7 @@ public class NiFiAtlasClient implements AutoCloseable {
     }
 
     private void registerFlowComponents(NiFiFlow nifiFlow) throws AtlasServiceException {
-        final AtlasObjectId nifiFlowObjectId = new AtlasObjectId(nifiFlow.getGuid());
+        final AtlasObjectId nifiFlowObjectId = nifiFlow.getAtlasObjectId();
 
         registerFlowComponents(nifiFlowObjectId, nifiFlow.getFlowPaths());
         registerFlowComponents(nifiFlowObjectId, nifiFlow.getQueues());

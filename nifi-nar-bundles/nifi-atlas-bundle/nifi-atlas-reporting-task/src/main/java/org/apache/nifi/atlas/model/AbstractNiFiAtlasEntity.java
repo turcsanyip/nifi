@@ -17,6 +17,7 @@
 package org.apache.nifi.atlas.model;
 
 import org.apache.atlas.model.instance.AtlasEntity;
+import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.nifi.atlas.AtlasUtils;
 
 import java.util.ArrayList;
@@ -68,6 +69,10 @@ abstract class AbstractNiFiAtlasEntity implements NiFiAtlasEntity {
     @Override
     public AtlasEntity getAtlasEntity() {
         return atlasEntity;
+    }
+
+    public AtlasObjectId getAtlasObjectId() {
+        return new AtlasObjectId(getGuid());
     }
 
     @Override

@@ -18,6 +18,7 @@ package org.apache.nifi.atlas.provenance;
 
 import org.apache.nifi.atlas.resolver.NamespaceResolver;
 import org.apache.nifi.controller.status.ConnectionStatus;
+import org.apache.nifi.controller.status.PortStatus;
 import org.apache.nifi.provenance.ProvenanceEventRecord;
 import org.apache.nifi.provenance.lineage.ComputeLineageResult;
 
@@ -28,6 +29,8 @@ public interface AnalysisContext {
     NamespaceResolver getNamespaceResolver();
     List<ConnectionStatus> findConnectionTo(String componentId);
     List<ConnectionStatus> findConnectionFrom(String componentId);
+    PortStatus getRemoteInputPort(String componentId);
+    PortStatus getRemoteOutputPort(String componentId);
     ComputeLineageResult queryLineage(long eventId);
     ComputeLineageResult findParents(long eventId);
     ProvenanceEventRecord getProvenanceEvent(long eventId);

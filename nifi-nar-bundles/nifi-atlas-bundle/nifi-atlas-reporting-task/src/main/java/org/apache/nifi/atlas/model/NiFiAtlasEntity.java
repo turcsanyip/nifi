@@ -17,6 +17,7 @@
 package org.apache.nifi.atlas.model;
 
 import org.apache.atlas.model.instance.AtlasEntity;
+import org.apache.atlas.model.instance.AtlasObjectId;
 
 public interface NiFiAtlasEntity {
 
@@ -25,6 +26,8 @@ public interface NiFiAtlasEntity {
     String getQualifiedName();
 
     AtlasEntity getAtlasEntity();
+
+    AtlasObjectId getAtlasObjectId();
 
     String getGuid();
 

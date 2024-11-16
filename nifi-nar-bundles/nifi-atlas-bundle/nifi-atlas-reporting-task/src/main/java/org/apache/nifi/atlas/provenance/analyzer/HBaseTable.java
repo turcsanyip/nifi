@@ -101,7 +101,7 @@ public class HBaseTable extends AbstractNiFiProvenanceEventAnalyzer {
         hbaseTableDataSet.setAttribute(ATTR_NAMESPACE, new AtlasObjectId(hbaseNamespaceDataSet.getGuid()));
         hbaseTableDataSet.setAttribute(ATTR_URI, isDefaultHBaseNamespace ? hbaseTableName : hbaseTableFullName);
 
-        hbaseTableDataSet.addReferredEntity(hbaseNamespaceDataSet);
+        hbaseTableDataSet.addReferredDataSet(hbaseNamespaceDataSet);
 
         return hbaseTableDataSet;
     }

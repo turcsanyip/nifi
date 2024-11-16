@@ -52,7 +52,7 @@ public abstract class AbstractHiveAnalyzer extends AbstractNiFiProvenanceEventAn
         tableDataSet.setAttribute(ATTR_QUALIFIED_NAME, toQualifiedName(namespace, toTableNameStr(tableName)));
         tableDataSet.setAttribute(ATTR_DB, new AtlasObjectId(databaseDataSet.getGuid()));
 
-        tableDataSet.addReferredEntity(databaseDataSet);
+        tableDataSet.addReferredDataSet(databaseDataSet);
 
         return tableDataSet;
     }

@@ -85,7 +85,7 @@ public class AzureADLSDirectory extends AbstractNiFiProvenanceEventAnalyzer {
                 pathExtractorContext.getKnownEntities().values().stream()
                         .filter(entity -> !entity.getGuid().equals(fileEntity.getGuid()))
                         .filter(entity -> !entity.getGuid().equals(parentEntity.getGuid()))
-                        .forEach(parentDataSet::addReferredEntity);
+                        .forEach(parentDataSet::addReferredDataSet);
 
                 return singleDataSetRef(event.getComponentId(), event.getEventType(), parentDataSet);
             }

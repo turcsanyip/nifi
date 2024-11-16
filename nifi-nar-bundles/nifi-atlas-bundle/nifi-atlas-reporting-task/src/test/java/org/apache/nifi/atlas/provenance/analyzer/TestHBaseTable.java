@@ -16,8 +16,8 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer;
 
-import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
+import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzer;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzerFactory;
@@ -31,6 +31,7 @@ import static org.apache.nifi.atlas.NiFiTypes.ATTR_CLUSTER_NAME;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_NAME;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_QUALIFIED_NAME;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_URI;
+import static org.apache.nifi.atlas.provenance.analyzer.AnalyzerTestUtils.getReferredDataSet;
 import static org.apache.nifi.atlas.provenance.analyzer.HBaseTable.ATTR_NAMESPACE;
 import static org.apache.nifi.atlas.provenance.analyzer.HBaseTable.TYPE_HBASE_NAMESPACE;
 import static org.apache.nifi.atlas.provenance.analyzer.HBaseTable.TYPE_HBASE_TABLE;
@@ -117,17 +118,17 @@ public class TestHBaseTable {
         assertEquals(1, refs.getInputs().size());
         assertEquals(0, refs.getOutputs().size());
 
-        Referenceable tableRef = refs.getInputs().iterator().next();
-        assertEquals(TYPE_HBASE_TABLE, tableRef.getTypeName());
-        assertEquals(expectedTableName, tableRef.get(ATTR_NAME));
-        assertEquals(expectedTableQualifiedName, tableRef.get(ATTR_QUALIFIED_NAME));
-        assertEquals(expectedTableUri, tableRef.get(ATTR_URI));
+        DataSet tableDataSet = refs.getInputs().iterator().next();
+        assertEquals(TYPE_HBASE_TABLE, tableDataSet.getTypeName());
+        assertEquals(expectedTableName, tableDataSet.getAttribute(ATTR_NAME));
+        assertEquals(expectedTableQualifiedName, tableDataSet.getAttribute(ATTR_QUALIFIED_NAME));
+        assertEquals(expectedTableUri, tableDataSet.getAttribute(ATTR_URI));
 
-        Referenceable namespaceRef = (Referenceable) tableRef.get(ATTR_NAMESPACE);
-        assertEquals(TYPE_HBASE_NAMESPACE, namespaceRef.getTypeName());
-        assertEquals(expectedNamespaceName, namespaceRef.get(ATTR_NAME));
-        assertEquals(expectedNamespaceQualifiedName, namespaceRef.get(ATTR_QUALIFIED_NAME));
-        assertEquals(ATLAS_METADATA_NAMESPACE, namespaceRef.get(ATTR_CLUSTER_NAME));
+        DataSet namespaceDataSet = getReferredDataSet(tableDataSet, tableDataSet.getAttribute(ATTR_NAMESPACE));
+        assertEquals(TYPE_HBASE_NAMESPACE, namespaceDataSet.getTypeName());
+        assertEquals(expectedNamespaceName, namespaceDataSet.getAttribute(ATTR_NAME));
+        assertEquals(expectedNamespaceQualifiedName, namespaceDataSet.getAttribute(ATTR_QUALIFIED_NAME));
+        assertEquals(ATLAS_METADATA_NAMESPACE, namespaceDataSet.getAttribute(ATTR_CLUSTER_NAME));
     }
 
 }

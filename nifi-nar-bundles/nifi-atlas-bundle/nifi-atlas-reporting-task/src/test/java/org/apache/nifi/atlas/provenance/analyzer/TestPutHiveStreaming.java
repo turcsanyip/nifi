@@ -16,8 +16,8 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer;
 
-import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
+import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzer;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzerFactory;
@@ -67,9 +67,9 @@ public class TestPutHiveStreaming {
         final DataSetRefs refs = analyzer.analyze(context, record);
         assertEquals(0, refs.getInputs().size());
         assertEquals(1, refs.getOutputs().size());
-        Referenceable ref = refs.getOutputs().iterator().next();
-        assertEquals("hive_table", ref.getTypeName());
-        assertEquals("table_a", ref.get(ATTR_NAME));
-        assertEquals("database_a.table_a@namespace1", ref.get(ATTR_QUALIFIED_NAME));
+        DataSet dataSet = refs.getOutputs().iterator().next();
+        assertEquals("hive_table", dataSet.getTypeName());
+        assertEquals("table_a", dataSet.getAttribute(ATTR_NAME));
+        assertEquals("database_a.table_a@namespace1", dataSet.getAttribute(ATTR_QUALIFIED_NAME));
     }
 }

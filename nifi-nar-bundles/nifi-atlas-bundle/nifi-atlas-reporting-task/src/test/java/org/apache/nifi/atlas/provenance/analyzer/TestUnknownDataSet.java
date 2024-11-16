@@ -16,8 +16,8 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer;
 
-import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
+import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzer;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzerFactory;
@@ -66,10 +66,10 @@ public class TestUnknownDataSet {
         final DataSetRefs refs = analyzer.analyze(context, record);
         assertEquals(1, refs.getInputs().size());
         assertEquals(0, refs.getOutputs().size());
-        Referenceable ref = refs.getInputs().iterator().next();
-        assertEquals("nifi_data", ref.getTypeName());
-        assertEquals("GenerateFlowFile", ref.get(ATTR_NAME));
-        assertEquals("processor-1234@test_namespace", ref.get(ATTR_QUALIFIED_NAME));
+        DataSet dataSet = refs.getInputs().iterator().next();
+        assertEquals("nifi_data", dataSet.getTypeName());
+        assertEquals("GenerateFlowFile", dataSet.getAttribute(ATTR_NAME));
+        assertEquals("processor-1234@test_namespace", dataSet.getAttribute(ATTR_QUALIFIED_NAME));
     }
 
     @Test

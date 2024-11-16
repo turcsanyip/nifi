@@ -16,8 +16,8 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer;
 
-import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
+import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzer;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzerFactory;
@@ -69,10 +69,10 @@ public class TestHive2JDBC {
         final DataSetRefs refs = analyzer.analyze(context, record);
         assertEquals(0, refs.getInputs().size());
         assertEquals(1, refs.getOutputs().size());
-        Referenceable ref = refs.getOutputs().iterator().next();
-        assertEquals("hive_table", ref.getTypeName());
-        assertEquals("unknown", ref.get(ATTR_NAME));
-        assertEquals("database_a.unknown@namespace1", ref.get(ATTR_QUALIFIED_NAME));
+        DataSet dataSet = refs.getOutputs().iterator().next();
+        assertEquals("hive_table", dataSet.getTypeName());
+        assertEquals("unknown", dataSet.getAttribute(ATTR_NAME));
+        assertEquals("database_a.unknown@namespace1", dataSet.getAttribute(ATTR_QUALIFIED_NAME));
     }
 
     /**
@@ -106,17 +106,17 @@ public class TestHive2JDBC {
         final Map<String, String> expectedInputRefs = new HashMap<>();
         expectedInputRefs.put("database_a.table_a1@namespace1", "table_a1");
         expectedInputRefs.put("database_a.table_a2@namespace1", "table_a2");
-        for (Referenceable ref : refs.getInputs()) {
-            final String qName = (String) ref.get(ATTR_QUALIFIED_NAME);
+        for (DataSet dataSet : refs.getInputs()) {
+            final String qName = (String) dataSet.getAttribute(ATTR_QUALIFIED_NAME);
             assertTrue(expectedInputRefs.containsKey(qName));
-            assertEquals(expectedInputRefs.get(qName), ref.get(ATTR_NAME));
+            assertEquals(expectedInputRefs.get(qName), dataSet.getAttribute(ATTR_NAME));
         }
 
         assertEquals(1, refs.getOutputs().size());
-        Referenceable ref = refs.getOutputs().iterator().next();
-        assertEquals("hive_table", ref.getTypeName());
-        assertEquals("table_b1", ref.get(ATTR_NAME));
-        assertEquals("database_b.table_b1@namespace1", ref.get(ATTR_QUALIFIED_NAME));
+        DataSet dataSet = refs.getOutputs().iterator().next();
+        assertEquals("hive_table", dataSet.getTypeName());
+        assertEquals("table_b1", dataSet.getAttribute(ATTR_NAME));
+        assertEquals("database_b.table_b1@namespace1", dataSet.getAttribute(ATTR_QUALIFIED_NAME));
     }
 
     /**
@@ -150,17 +150,17 @@ public class TestHive2JDBC {
         final Map<String, String> expectedInputRefs = new HashMap<>();
         expectedInputRefs.put("default.table_a1@namespace1", "table_a1");
         expectedInputRefs.put("default.table_a2@namespace1", "table_a2");
-        for (Referenceable ref : refs.getInputs()) {
-            final String qName = (String) ref.get(ATTR_QUALIFIED_NAME);
+        for (DataSet dataSet : refs.getInputs()) {
+            final String qName = (String) dataSet.getAttribute(ATTR_QUALIFIED_NAME);
             assertTrue(expectedInputRefs.containsKey(qName));
-            assertEquals(expectedInputRefs.get(qName), ref.get(ATTR_NAME));
+            assertEquals(expectedInputRefs.get(qName), dataSet.getAttribute(ATTR_NAME));
         }
 
         assertEquals(1, refs.getOutputs().size());
-        Referenceable ref = refs.getOutputs().iterator().next();
-        assertEquals("hive_table", ref.getTypeName());
-        assertEquals("table_b1", ref.get(ATTR_NAME));
-        assertEquals("database_b.table_b1@namespace1", ref.get(ATTR_QUALIFIED_NAME));
+        DataSet dataSet = refs.getOutputs().iterator().next();
+        assertEquals("hive_table", dataSet.getTypeName());
+        assertEquals("table_b1", dataSet.getAttribute(ATTR_NAME));
+        assertEquals("database_b.table_b1@namespace1", dataSet.getAttribute(ATTR_QUALIFIED_NAME));
     }
 
     /**
@@ -193,17 +193,17 @@ public class TestHive2JDBC {
         final Map<String, String> expectedInputRefs = new HashMap<>();
         expectedInputRefs.put("default.table_a1@namespace1", "table_a1");
         expectedInputRefs.put("default.table_a2@namespace1", "table_a2");
-        for (Referenceable ref : refs.getInputs()) {
-            final String qName = (String) ref.get(ATTR_QUALIFIED_NAME);
+        for (DataSet dataSet : refs.getInputs()) {
+            final String qName = (String) dataSet.getAttribute(ATTR_QUALIFIED_NAME);
             assertTrue(expectedInputRefs.containsKey(qName));
-            assertEquals(expectedInputRefs.get(qName), ref.get(ATTR_NAME));
+            assertEquals(expectedInputRefs.get(qName), dataSet.getAttribute(ATTR_NAME));
         }
 
         assertEquals(1, refs.getOutputs().size());
-        Referenceable ref = refs.getOutputs().iterator().next();
-        assertEquals("hive_table", ref.getTypeName());
-        assertEquals("table_b1", ref.get(ATTR_NAME));
-        assertEquals("database_b.table_b1@namespace1", ref.get(ATTR_QUALIFIED_NAME));
+        DataSet dataSet = refs.getOutputs().iterator().next();
+        assertEquals("hive_table", dataSet.getTypeName());
+        assertEquals("table_b1", dataSet.getAttribute(ATTR_NAME));
+        assertEquals("database_b.table_b1@namespace1", dataSet.getAttribute(ATTR_QUALIFIED_NAME));
     }
 
     /**
@@ -238,17 +238,17 @@ public class TestHive2JDBC {
         final Map<String, String> expectedInputRefs = new HashMap<>();
         expectedInputRefs.put("default.table_a1@namespace1", "table_a1");
         expectedInputRefs.put("default.table_a2@namespace1", "table_a2");
-        for (Referenceable ref : refs.getInputs()) {
-            final String qName = (String) ref.get(ATTR_QUALIFIED_NAME);
+        for (DataSet dataSet : refs.getInputs()) {
+            final String qName = (String) dataSet.getAttribute(ATTR_QUALIFIED_NAME);
             assertTrue(expectedInputRefs.containsKey(qName));
-            assertEquals(expectedInputRefs.get(qName), ref.get(ATTR_NAME));
+            assertEquals(expectedInputRefs.get(qName), dataSet.getAttribute(ATTR_NAME));
         }
 
         assertEquals(1, refs.getOutputs().size());
-        Referenceable ref = refs.getOutputs().iterator().next();
-        assertEquals("hive_table", ref.getTypeName());
-        assertEquals("table_b1", ref.get(ATTR_NAME));
-        assertEquals("database_b.table_b1@namespace1", ref.get(ATTR_QUALIFIED_NAME));
+        DataSet dataSet = refs.getOutputs().iterator().next();
+        assertEquals("hive_table", dataSet.getTypeName());
+        assertEquals("table_b1", dataSet.getAttribute(ATTR_NAME));
+        assertEquals("database_b.table_b1@namespace1", dataSet.getAttribute(ATTR_QUALIFIED_NAME));
     }
 
     /**
@@ -281,17 +281,17 @@ public class TestHive2JDBC {
         final Map<String, String> expectedInputRefs = new HashMap<>();
         expectedInputRefs.put("some_database.table_a1@namespace1", "table_a1");
         expectedInputRefs.put("some_database.table_a2@namespace1", "table_a2");
-        for (Referenceable ref : refs.getInputs()) {
-            final String qName = (String) ref.get(ATTR_QUALIFIED_NAME);
+        for (DataSet dataSet : refs.getInputs()) {
+            final String qName = (String) dataSet.getAttribute(ATTR_QUALIFIED_NAME);
             assertTrue(expectedInputRefs.containsKey(qName));
-            assertEquals(expectedInputRefs.get(qName), ref.get(ATTR_NAME));
+            assertEquals(expectedInputRefs.get(qName), dataSet.getAttribute(ATTR_NAME));
         }
 
         assertEquals(1, refs.getOutputs().size());
-        Referenceable ref = refs.getOutputs().iterator().next();
-        assertEquals("hive_table", ref.getTypeName());
-        assertEquals("table_b1", ref.get(ATTR_NAME));
-        assertEquals("database_b.table_b1@namespace1", ref.get(ATTR_QUALIFIED_NAME));
+        DataSet dataSet = refs.getOutputs().iterator().next();
+        assertEquals("hive_table", dataSet.getTypeName());
+        assertEquals("table_b1", dataSet.getAttribute(ATTR_NAME));
+        assertEquals("database_b.table_b1@namespace1", dataSet.getAttribute(ATTR_QUALIFIED_NAME));
     }
 
 }

@@ -16,8 +16,8 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer;
 
-import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
+import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.atlas.provenance.FilesystemPathsLevel;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzer;
@@ -90,9 +90,9 @@ public class TestFilePath {
         final DataSetRefs refs = analyzer.analyze(context, record);
         assertEquals(0, refs.getInputs().size());
         assertEquals(1, refs.getOutputs().size());
-        Referenceable ref = refs.getOutputs().iterator().next();
-        assertEquals("fs_path", ref.getTypeName());
-        assertEquals(expectedPath, ref.get(ATTR_NAME));
-        assertEquals(expectedPath + "@namespace1", ref.get(ATTR_QUALIFIED_NAME));
+        DataSet dataSet = refs.getOutputs().iterator().next();
+        assertEquals("fs_path", dataSet.getTypeName());
+        assertEquals(expectedPath, dataSet.getAttribute(ATTR_NAME));
+        assertEquals(expectedPath + "@namespace1", dataSet.getAttribute(ATTR_QUALIFIED_NAME));
     }
 }

@@ -444,8 +444,8 @@ public class NiFiAtlasClient implements AutoCloseable {
 
             for (DataSet dataSet : dataSetsBatch) {
                 entitiesExt.addEntity(dataSet.getEntity());
-                for (AtlasEntity referredEntity : dataSet.getReferredEntities()) {
-                    entitiesExt.addReferredEntity(referredEntity);
+                for (DataSet referredDataSet : dataSet.getReferredDataSets()) {
+                    entitiesExt.addReferredEntity(referredDataSet.getEntity());
                 }
             }
 

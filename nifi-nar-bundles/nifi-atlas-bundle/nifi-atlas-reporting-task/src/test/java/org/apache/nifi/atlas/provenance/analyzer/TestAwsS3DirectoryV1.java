@@ -16,20 +16,23 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer;
 
-import org.apache.atlas.v1.model.instance.Referenceable;
+import org.apache.atlas.utils.AtlasPathExtractorUtil;
+import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.junit.jupiter.api.Test;
 
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_NAME;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_QUALIFIED_NAME;
-import static org.apache.nifi.atlas.provenance.analyzer.AwsS3Directory.ATTR_BUCKET_V1;
-import static org.apache.nifi.atlas.provenance.analyzer.AwsS3Directory.ATTR_OBJECT_PREFIX_V1;
-import static org.apache.nifi.atlas.provenance.analyzer.AwsS3Directory.TYPE_BUCKET_V1;
-import static org.apache.nifi.atlas.provenance.analyzer.AwsS3Directory.TYPE_DIRECTORY_V1;
+import static org.apache.nifi.atlas.provenance.analyzer.AnalyzerTestUtils.getReferredDataSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class TestAwsS3DirectoryV1 extends AbstractTestAwsS3Directory {
+
+    private static final String TYPE_DIRECTORY_V1 = AtlasPathExtractorUtil.AWS_S3_PSEUDO_DIR;
+    private static final String TYPE_BUCKET_V1 = AtlasPathExtractorUtil.AWS_S3_BUCKET;
+    private static final String ATTR_BUCKET_V1 = AtlasPathExtractorUtil.ATTRIBUTE_BUCKET;
+    private static final String ATTR_OBJECT_PREFIX_V1 = AtlasPathExtractorUtil.ATTRIBUTE_OBJECT_PREFIX;
 
     @Override
     protected String getAwsS3ModelVersion() {
@@ -76,17 +79,17 @@ public class TestAwsS3DirectoryV1 extends AbstractTestAwsS3Directory {
         assertEquals(0, refs.getInputs().size());
         assertEquals(1, refs.getOutputs().size());
 
-        Referenceable directoryRef = refs.getOutputs().iterator().next();
+        DataSet directoryDataSet = refs.getOutputs().iterator().next();
 
-        assertEquals(TYPE_DIRECTORY_V1, directoryRef.getTypeName());
-        assertEquals(expectedDirectoryQualifiedName, directoryRef.get(ATTR_QUALIFIED_NAME));
-        assertEquals(dirPath, directoryRef.get(ATTR_NAME));
-        assertEquals(dirPath, directoryRef.get(ATTR_OBJECT_PREFIX_V1));
+        assertEquals(TYPE_DIRECTORY_V1, directoryDataSet.getTypeName());
+        assertEquals(expectedDirectoryQualifiedName, directoryDataSet.getAttribute(ATTR_QUALIFIED_NAME));
+        assertEquals(dirPath, directoryDataSet.getAttribute(ATTR_NAME));
+        assertEquals(dirPath, directoryDataSet.getAttribute(ATTR_OBJECT_PREFIX_V1));
 
-        Referenceable bucketRef = (Referenceable) directoryRef.get(ATTR_BUCKET_V1);
-        assertNotNull(bucketRef);
-        assertEquals(TYPE_BUCKET_V1, bucketRef.getTypeName());
-        assertEquals(expectedBucketQualifiedName, bucketRef.get(ATTR_QUALIFIED_NAME));
-        assertEquals(AWS_BUCKET, bucketRef.get(ATTR_NAME));
+        DataSet bucketDataSet = getReferredDataSet(directoryDataSet, directoryDataSet.getRelationshipAttribute(ATTR_BUCKET_V1));
+        assertNotNull(bucketDataSet);
+        assertEquals(TYPE_BUCKET_V1, bucketDataSet.getTypeName());
+        assertEquals(expectedBucketQualifiedName, bucketDataSet.getAttribute(ATTR_QUALIFIED_NAME));
+        assertEquals(AWS_BUCKET, bucketDataSet.getAttribute(ATTR_NAME));
     }
 }

@@ -16,8 +16,8 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer;
 
-import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
+import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzer;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzerFactory;
@@ -58,6 +58,7 @@ public class TestNiFiRemotePortClient {
         when(sendEvent.getComponentType()).thenReturn(componentType);
         when(sendEvent.getTransitUri()).thenReturn(transitUri);
         when(sendEvent.getEventType()).thenReturn(ProvenanceEventType.SEND);
+        when(sendEvent.getAttribute(SiteToSiteAttributes.S2S_PORT_ID.key())).thenReturn("port-guid");
 
         final NamespaceResolvers namespaceResolvers = Mockito.mock(NamespaceResolvers.class);
         when(namespaceResolvers.fromHostNames(matches(".+\\.example\\.com"))).thenReturn("namespace1");
@@ -82,10 +83,10 @@ public class TestNiFiRemotePortClient {
         // Should report connected componentId.
         assertEquals("port-guid", refs.getComponentId());
 
-        Referenceable ref = refs.getOutputs().iterator().next();
-        assertEquals(TYPE_NIFI_INPUT_PORT, ref.getTypeName());
-        assertEquals("inputPortA", ref.get(ATTR_NAME));
-        assertEquals("port-guid@namespace1", ref.get(ATTR_QUALIFIED_NAME));
+        DataSet dataSet = refs.getOutputs().iterator().next();
+        assertEquals(TYPE_NIFI_INPUT_PORT, dataSet.getTypeName());
+        assertEquals("inputPortA", dataSet.getAttribute(ATTR_NAME));
+        assertEquals("port-guid@namespace1", dataSet.getAttribute(ATTR_QUALIFIED_NAME));
     }
 
     @Test
@@ -97,6 +98,7 @@ public class TestNiFiRemotePortClient {
         when(record.getComponentType()).thenReturn(componentType);
         when(record.getTransitUri()).thenReturn(transitUri);
         when(record.getEventType()).thenReturn(ProvenanceEventType.RECEIVE);
+        when(record.getAttribute(SiteToSiteAttributes.S2S_PORT_ID.key())).thenReturn("port-guid");
 
         final NamespaceResolvers namespaceResolvers = Mockito.mock(NamespaceResolvers.class);
         when(namespaceResolvers.fromHostNames(matches(".+\\.example\\.com"))).thenReturn("namespace1");
@@ -117,10 +119,10 @@ public class TestNiFiRemotePortClient {
         final DataSetRefs refs = analyzer.analyze(context, record);
         assertEquals(1, refs.getInputs().size());
         assertEquals(0, refs.getOutputs().size());
-        Referenceable ref = refs.getInputs().iterator().next();
-        assertEquals(TYPE_NIFI_OUTPUT_PORT, ref.getTypeName());
-        assertEquals("outputPortA", ref.get(ATTR_NAME));
-        assertEquals("port-guid@namespace1", ref.get(ATTR_QUALIFIED_NAME));
+        DataSet dataSet = refs.getInputs().iterator().next();
+        assertEquals(TYPE_NIFI_OUTPUT_PORT, dataSet.getTypeName());
+        assertEquals("outputPortA", dataSet.getAttribute(ATTR_NAME));
+        assertEquals("port-guid@namespace1", dataSet.getAttribute(ATTR_QUALIFIED_NAME));
     }
 
     @Test
@@ -160,10 +162,10 @@ public class TestNiFiRemotePortClient {
         // Should report connected componentId.
         assertEquals("s2s-client-component-guid", refs.getComponentId());
 
-        Referenceable ref = refs.getOutputs().iterator().next();
-        assertEquals(TYPE_NIFI_INPUT_PORT, ref.getTypeName());
-        assertEquals("inputPortA", ref.get(ATTR_NAME));
-        assertEquals("remote-port-guid@namespace1", ref.get(ATTR_QUALIFIED_NAME));
+        DataSet dataSet = refs.getOutputs().iterator().next();
+        assertEquals(TYPE_NIFI_INPUT_PORT, dataSet.getTypeName());
+        assertEquals("inputPortA", dataSet.getAttribute(ATTR_NAME));
+        assertEquals("remote-port-guid@namespace1", dataSet.getAttribute(ATTR_QUALIFIED_NAME));
     }
 
     @Test
@@ -198,10 +200,10 @@ public class TestNiFiRemotePortClient {
         final DataSetRefs refs = analyzer.analyze(context, record);
         assertEquals(1, refs.getInputs().size());
         assertEquals(0, refs.getOutputs().size());
-        Referenceable ref = refs.getInputs().iterator().next();
-        assertEquals(TYPE_NIFI_OUTPUT_PORT, ref.getTypeName());
-        assertEquals("outputPortA", ref.get(ATTR_NAME));
-        assertEquals("remote-port-guid@namespace1", ref.get(ATTR_QUALIFIED_NAME));
+        DataSet dataSet = refs.getInputs().iterator().next();
+        assertEquals(TYPE_NIFI_OUTPUT_PORT, dataSet.getTypeName());
+        assertEquals("outputPortA", dataSet.getAttribute(ATTR_NAME));
+        assertEquals("remote-port-guid@namespace1", dataSet.getAttribute(ATTR_QUALIFIED_NAME));
     }
 
 }

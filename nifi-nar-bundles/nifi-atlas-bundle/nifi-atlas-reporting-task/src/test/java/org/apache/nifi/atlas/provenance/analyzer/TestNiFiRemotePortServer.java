@@ -16,21 +16,18 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer;
 
-import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
+import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzer;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzerFactory;
 import org.apache.nifi.atlas.reporting.ITReportLineageToAtlas;
 import org.apache.nifi.atlas.resolver.NamespaceResolvers;
-import org.apache.nifi.controller.status.ConnectionStatus;
+import org.apache.nifi.controller.status.PortStatus;
 import org.apache.nifi.provenance.ProvenanceEventRecord;
 import org.apache.nifi.provenance.ProvenanceEventType;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_NAME;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_QUALIFIED_NAME;
@@ -61,15 +58,12 @@ public class TestNiFiRemotePortServer {
         final NamespaceResolvers namespaceResolvers = Mockito.mock(NamespaceResolvers.class);
         when(namespaceResolvers.fromHostNames(matches(".+\\.example\\.com"))).thenReturn("namespace1");
 
-        final List<ConnectionStatus> connections = new ArrayList<>();
-        final ConnectionStatus connection = new ConnectionStatus();
-        connection.setSourceId("port-guid");
-        connection.setSourceName("inputPortA");
-        connections.add(connection);
+        final PortStatus inputPort = new PortStatus();
+        inputPort.setName("inputPortA");
 
         final AnalysisContext context = Mockito.mock(AnalysisContext.class);
         when(context.getNamespaceResolver()).thenReturn(namespaceResolvers);
-        when(context.findConnectionFrom(matches("port-guid"))).thenReturn(connections);
+        when(context.getRemoteInputPort("port-guid")).thenReturn(inputPort);
 
         final NiFiProvenanceEventAnalyzer analyzer = NiFiProvenanceEventAnalyzerFactory.getAnalyzer(componentType, transitUri, receiveEvent.getEventType());
         assertNotNull(analyzer);
@@ -81,10 +75,10 @@ public class TestNiFiRemotePortServer {
         // Should report connected componentId.
         assertEquals("port-guid", refs.getComponentId());
 
-        Referenceable ref = refs.getInputs().iterator().next();
-        assertEquals(TYPE_NIFI_INPUT_PORT, ref.getTypeName());
-        assertEquals("inputPortA", ref.get(ATTR_NAME));
-        assertEquals("port-guid@namespace1", ref.get(ATTR_QUALIFIED_NAME));
+        DataSet dataSet = refs.getInputs().iterator().next();
+        assertEquals(TYPE_NIFI_INPUT_PORT, dataSet.getTypeName());
+        assertEquals("inputPortA", dataSet.getAttribute(ATTR_NAME));
+        assertEquals("port-guid@namespace1", dataSet.getAttribute(ATTR_QUALIFIED_NAME));
     }
 
     @Test
@@ -100,15 +94,12 @@ public class TestNiFiRemotePortServer {
         final NamespaceResolvers namespaceResolvers = Mockito.mock(NamespaceResolvers.class);
         when(namespaceResolvers.fromHostNames(matches(".+\\.example\\.com"))).thenReturn("namespace1");
 
-        final List<ConnectionStatus> connections = new ArrayList<>();
-        final ConnectionStatus connection = new ConnectionStatus();
-        connection.setDestinationId("port-guid");
-        connection.setDestinationName("outputPortA");
-        connections.add(connection);
+        final PortStatus outputPort = new PortStatus();
+        outputPort.setName("outputPortA");
 
         final AnalysisContext context = Mockito.mock(AnalysisContext.class);
         when(context.getNamespaceResolver()).thenReturn(namespaceResolvers);
-        when(context.findConnectionTo(matches("port-guid"))).thenReturn(connections);
+        when(context.getRemoteOutputPort("port-guid")).thenReturn(outputPort);
 
         final NiFiProvenanceEventAnalyzer analyzer = NiFiProvenanceEventAnalyzerFactory.getAnalyzer(componentType, transitUri, sendEvent.getEventType());
         assertNotNull(analyzer);
@@ -116,10 +107,10 @@ public class TestNiFiRemotePortServer {
         final DataSetRefs refs = analyzer.analyze(context, sendEvent);
         assertEquals(0, refs.getInputs().size());
         assertEquals(1, refs.getOutputs().size());
-        Referenceable ref = refs.getOutputs().iterator().next();
-        assertEquals(TYPE_NIFI_OUTPUT_PORT, ref.getTypeName());
-        assertEquals("outputPortA", ref.get(ATTR_NAME));
-        assertEquals("port-guid@namespace1", ref.get(ATTR_QUALIFIED_NAME));
+        DataSet dataSet = refs.getOutputs().iterator().next();
+        assertEquals(TYPE_NIFI_OUTPUT_PORT, dataSet.getTypeName());
+        assertEquals("outputPortA", dataSet.getAttribute(ATTR_NAME));
+        assertEquals("port-guid@namespace1", dataSet.getAttribute(ATTR_QUALIFIED_NAME));
     }
 
     @Test
@@ -137,15 +128,12 @@ public class TestNiFiRemotePortServer {
         final NamespaceResolvers namespaceResolvers = Mockito.mock(NamespaceResolvers.class);
         when(namespaceResolvers.fromHostNames(matches(".+\\.example\\.com"))).thenReturn("namespace1");
 
-        final List<ConnectionStatus> connections = new ArrayList<>();
-        final ConnectionStatus connection = new ConnectionStatus();
-        connection.setSourceId("port-guid");
-        connection.setSourceName("inputPortA");
-        connections.add(connection);
+        final PortStatus inputPort = new PortStatus();
+        inputPort.setName("inputPortA");
 
         final AnalysisContext context = Mockito.mock(AnalysisContext.class);
         when(context.getNamespaceResolver()).thenReturn(namespaceResolvers);
-        when(context.findConnectionFrom(matches("port-guid"))).thenReturn(connections);
+        when(context.getRemoteInputPort("port-guid")).thenReturn(inputPort);
 
         final NiFiProvenanceEventAnalyzer analyzer = NiFiProvenanceEventAnalyzerFactory.getAnalyzer(componentType, transitUri, receiveEvent.getEventType());
         assertNotNull(analyzer);
@@ -157,10 +145,10 @@ public class TestNiFiRemotePortServer {
         // Should report connected componentId.
         assertEquals("port-guid", refs.getComponentId());
 
-        Referenceable ref = refs.getInputs().iterator().next();
-        assertEquals(TYPE_NIFI_INPUT_PORT, ref.getTypeName());
-        assertEquals("inputPortA", ref.get(ATTR_NAME));
-        assertEquals("port-guid@namespace1", ref.get(ATTR_QUALIFIED_NAME));
+        DataSet dataSet = refs.getInputs().iterator().next();
+        assertEquals(TYPE_NIFI_INPUT_PORT, dataSet.getTypeName());
+        assertEquals("inputPortA", dataSet.getAttribute(ATTR_NAME));
+        assertEquals("port-guid@namespace1", dataSet.getAttribute(ATTR_QUALIFIED_NAME));
     }
 
     @Test
@@ -177,15 +165,12 @@ public class TestNiFiRemotePortServer {
         final NamespaceResolvers namespaceResolvers = Mockito.mock(NamespaceResolvers.class);
         when(namespaceResolvers.fromHostNames(matches(".+\\.example\\.com"))).thenReturn("namespace1");
 
-        final List<ConnectionStatus> connections = new ArrayList<>();
-        final ConnectionStatus connection = new ConnectionStatus();
-        connection.setDestinationId("port-guid");
-        connection.setDestinationName("outputPortA");
-        connections.add(connection);
+        final PortStatus outputPort = new PortStatus();
+        outputPort.setName("outputPortA");
 
         final AnalysisContext context = Mockito.mock(AnalysisContext.class);
         when(context.getNamespaceResolver()).thenReturn(namespaceResolvers);
-        when(context.findConnectionTo(matches("port-guid"))).thenReturn(connections);
+        when(context.getRemoteOutputPort("port-guid")).thenReturn(outputPort);
 
         final NiFiProvenanceEventAnalyzer analyzer = NiFiProvenanceEventAnalyzerFactory.getAnalyzer(componentType, transitUri, sendEvent.getEventType());
         assertNotNull(analyzer);
@@ -193,10 +178,10 @@ public class TestNiFiRemotePortServer {
         final DataSetRefs refs = analyzer.analyze(context, sendEvent);
         assertEquals(0, refs.getInputs().size());
         assertEquals(1, refs.getOutputs().size());
-        Referenceable ref = refs.getOutputs().iterator().next();
-        assertEquals(TYPE_NIFI_OUTPUT_PORT, ref.getTypeName());
-        assertEquals("outputPortA", ref.get(ATTR_NAME));
-        assertEquals("port-guid@namespace1", ref.get(ATTR_QUALIFIED_NAME));
+        DataSet dataSet = refs.getOutputs().iterator().next();
+        assertEquals(TYPE_NIFI_OUTPUT_PORT, dataSet.getTypeName());
+        assertEquals("outputPortA", dataSet.getAttribute(ATTR_NAME));
+        assertEquals("port-guid@namespace1", dataSet.getAttribute(ATTR_QUALIFIED_NAME));
     }
 
 }

@@ -27,7 +27,7 @@ public class DataSet {
 
     private final AtlasEntity entity;
 
-    private List<AtlasEntity> referredEntities;
+    private List<DataSet> referredDataSets;
 
     public DataSet(String typeName) {
         this.entity = new AtlasEntity(typeName);
@@ -37,24 +37,27 @@ public class DataSet {
         this.entity = entity;
     }
 
+    public String getTypeName() {
+        return entity.getTypeName();
+    }
+
     public AtlasEntity getEntity() {
         return entity;
     }
 
-    public void addReferredEntity(AtlasEntity entity) {
-        if (referredEntities == null) {
-            referredEntities = new ArrayList<>();
+    public void addReferredDataSet(DataSet dataSet) {
+        if (referredDataSets == null) {
+            referredDataSets = new ArrayList<>();
         }
-
-        referredEntities.add(entity);
+        referredDataSets.add(dataSet);
     }
 
-    public void addReferredEntity(DataSet dataSet) {
-        addReferredEntity(dataSet.getEntity());
+    public void addReferredDataSet(AtlasEntity entity) {
+        addReferredDataSet(new DataSet(entity));
     }
 
-    public List<AtlasEntity> getReferredEntities() {
-        return referredEntities != null ? referredEntities : Collections.emptyList();
+    public List<DataSet> getReferredDataSets() {
+        return referredDataSets != null ? referredDataSets : Collections.emptyList();
     }
 
     public String getGuid() {
@@ -79,5 +82,10 @@ public class DataSet {
 
     public Object getAttribute(String name) {
         return entity.getAttribute(name);
+    }
+
+    // visible for testing
+    public Object getRelationshipAttribute(String name) {
+        return entity.getRelationshipAttribute(name);
     }
 }

@@ -48,7 +48,7 @@ public abstract class AbstractDirectoryAnalyzer extends AbstractNiFiProvenanceEv
 
         pathExtractorContext.getKnownEntities().values().stream()
                 .filter(entity -> !entity.getGuid().equals(directoryDataSet.getGuid()))
-                .forEach(directoryDataSet::addReferredEntity);
+                .forEach(directoryDataSet::addReferredDataSet);
 
         return singleDataSetRef(event.getComponentId(), event.getEventType(), directoryDataSet);
     }

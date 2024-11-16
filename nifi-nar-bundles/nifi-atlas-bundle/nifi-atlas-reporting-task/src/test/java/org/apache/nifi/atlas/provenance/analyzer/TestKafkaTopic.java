@@ -16,8 +16,8 @@
  */
 package org.apache.nifi.atlas.provenance.analyzer;
 
-import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
+import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzer;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzerFactory;
@@ -58,10 +58,11 @@ public class TestKafkaTopic {
         final DataSetRefs refs = analyzer.analyze(context, record);
         assertEquals(0, refs.getInputs().size());
         assertEquals(1, refs.getOutputs().size());
-        Referenceable ref = refs.getOutputs().iterator().next();
-        assertEquals("topicA", ref.get(ATTR_NAME));
-        assertEquals("topicA", ref.get("topic"));
-        assertEquals("topicA@namespace1", ref.get(ATTR_QUALIFIED_NAME));
+        DataSet dataSet = refs.getOutputs().iterator().next();
+        assertEquals("kafka_topic", dataSet.getTypeName());
+        assertEquals("topicA", dataSet.getAttribute(ATTR_NAME));
+        assertEquals("topicA", dataSet.getAttribute("topic"));
+        assertEquals("topicA@namespace1", dataSet.getAttribute(ATTR_QUALIFIED_NAME));
     }
 
     @Test
@@ -85,10 +86,11 @@ public class TestKafkaTopic {
         final DataSetRefs refs = analyzer.analyze(context, record);
         assertEquals(0, refs.getInputs().size());
         assertEquals(1, refs.getOutputs().size());
-        Referenceable ref = refs.getOutputs().iterator().next();
-        assertEquals("topicA", ref.get(ATTR_NAME));
-        assertEquals("topicA", ref.get("topic"));
-        assertEquals("topicA@namespace1", ref.get(ATTR_QUALIFIED_NAME));
+        DataSet dataSet = refs.getOutputs().iterator().next();
+        assertEquals("kafka_topic", dataSet.getTypeName());
+        assertEquals("topicA", dataSet.getAttribute(ATTR_NAME));
+        assertEquals("topicA", dataSet.getAttribute("topic"));
+        assertEquals("topicA@namespace1", dataSet.getAttribute(ATTR_QUALIFIED_NAME));
     }
 
     @Test
@@ -112,11 +114,11 @@ public class TestKafkaTopic {
         final DataSetRefs refs = analyzer.analyze(context, record);
         assertEquals(1, refs.getInputs().size());
         assertEquals(0, refs.getOutputs().size());
-        Referenceable ref = refs.getInputs().iterator().next();
-        assertEquals("kafka_topic", ref.getTypeName());
-        assertEquals("topicA", ref.get(ATTR_NAME));
-        assertEquals("topicA", ref.get("topic"));
-        assertEquals("topicA@namespace1", ref.get(ATTR_QUALIFIED_NAME));
+        DataSet dataSet = refs.getInputs().iterator().next();
+        assertEquals("kafka_topic", dataSet.getTypeName());
+        assertEquals("topicA", dataSet.getAttribute(ATTR_NAME));
+        assertEquals("topicA", dataSet.getAttribute("topic"));
+        assertEquals("topicA@namespace1", dataSet.getAttribute(ATTR_QUALIFIED_NAME));
     }
 
     @Test
@@ -140,11 +142,11 @@ public class TestKafkaTopic {
         final DataSetRefs refs = analyzer.analyze(context, record);
         assertEquals(1, refs.getInputs().size());
         assertEquals(0, refs.getOutputs().size());
-        Referenceable ref = refs.getInputs().iterator().next();
-        assertEquals("kafka_topic", ref.getTypeName());
-        assertEquals("topicA", ref.get(ATTR_NAME));
-        assertEquals("topicA", ref.get("topic"));
-        assertEquals("topicA@namespace1", ref.get(ATTR_QUALIFIED_NAME));
+        DataSet dataSet = refs.getInputs().iterator().next();
+        assertEquals("kafka_topic", dataSet.getTypeName());
+        assertEquals("topicA", dataSet.getAttribute(ATTR_NAME));
+        assertEquals("topicA", dataSet.getAttribute("topic"));
+        assertEquals("topicA@namespace1", dataSet.getAttribute(ATTR_QUALIFIED_NAME));
     }
 
 }

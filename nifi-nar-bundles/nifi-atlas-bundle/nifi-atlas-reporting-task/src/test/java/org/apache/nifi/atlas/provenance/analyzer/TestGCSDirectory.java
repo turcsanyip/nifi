@@ -17,8 +17,8 @@
 package org.apache.nifi.atlas.provenance.analyzer;
 
 import org.apache.atlas.utils.AtlasPathExtractorUtil;
-import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.nifi.atlas.provenance.AnalysisContext;
+import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzer;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzerFactory;
@@ -31,8 +31,7 @@ import org.mockito.Mockito;
 
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_NAME;
 import static org.apache.nifi.atlas.NiFiTypes.ATTR_QUALIFIED_NAME;
-import static org.apache.nifi.atlas.provenance.analyzer.GCSDirectory.GCP_STORAGE_VIRTUAL_DIRECTORY;
-import static org.apache.nifi.atlas.provenance.analyzer.GCSDirectory.REL_PARENT;
+import static org.apache.nifi.atlas.provenance.analyzer.AnalyzerTestUtils.getReferredDataSet;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -47,7 +46,6 @@ public class TestGCSDirectory {
     private static final String GCS_TRANSIT_URI_FORMAT = "gs://%s%s/%s";
     private static final String GCS_ROOT_TRANSIT_URI_FORMAT = "gs://%s/%s";
 
-
     @Test
     public void testSimpleDirectory() {
         String processorName = "PutHDFS";
@@ -56,7 +54,7 @@ public class TestGCSDirectory {
         String transitUri = String.format(GCS_TRANSIT_URI_FORMAT, GCS_BUCKET, dirPath, GCS_FILENAME);
 
         executeTest(processorName, transitUri, "dir1", "/", GCS_BUCKET,
-                GCP_STORAGE_VIRTUAL_DIRECTORY, expectedDirectoryQualifiedName, AtlasPathExtractorUtil.GCS_BUCKET);
+                AtlasPathExtractorUtil.GCS_VIRTUAL_DIR, expectedDirectoryQualifiedName, AtlasPathExtractorUtil.GCS_BUCKET);
     }
 
     @Test
@@ -67,7 +65,7 @@ public class TestGCSDirectory {
         String transitUri = String.format(GCS_TRANSIT_URI_FORMAT, GCS_BUCKET, dirPath, GCS_FILENAME);
 
         executeTest(processorName, transitUri, "dir5", "/dir1/dir2/dir3/dir4/", "dir4",
-                GCP_STORAGE_VIRTUAL_DIRECTORY, expectedDirectoryQualifiedName, AtlasPathExtractorUtil.GCS_VIRTUAL_DIR);
+                AtlasPathExtractorUtil.GCS_VIRTUAL_DIR, expectedDirectoryQualifiedName, AtlasPathExtractorUtil.GCS_VIRTUAL_DIR);
     }
 
     @Test
@@ -96,22 +94,21 @@ public class TestGCSDirectory {
     protected void assertAnalysisResult(DataSetRefs refs, String lastDirName, String parentPath, String parentName,
                                         String directoryType, String expectedDirectoryQualifiedName, String parentType) {
 
-
         Assertions.assertEquals(0, refs.getInputs().size());
         Assertions.assertEquals(1, refs.getOutputs().size());
 
-        Referenceable directoryRef = refs.getOutputs().iterator().next();
+        DataSet directoryDataSet = refs.getOutputs().iterator().next();
 
-        Assertions.assertEquals(directoryType, directoryRef.getTypeName());
-        Assertions.assertEquals(expectedDirectoryQualifiedName, directoryRef.get(ATTR_QUALIFIED_NAME));
-        Assertions.assertEquals(lastDirName, directoryRef.get(ATTR_NAME));
-        Assertions.assertEquals(parentPath, directoryRef.get(AtlasPathExtractorUtil.ATTRIBUTE_OBJECT_PREFIX));
+        Assertions.assertEquals(directoryType, directoryDataSet.getTypeName());
+        Assertions.assertEquals(expectedDirectoryQualifiedName, directoryDataSet.getAttribute(ATTR_QUALIFIED_NAME));
+        Assertions.assertEquals(lastDirName, directoryDataSet.getAttribute(ATTR_NAME));
+        Assertions.assertEquals(parentPath, directoryDataSet.getAttribute(AtlasPathExtractorUtil.ATTRIBUTE_OBJECT_PREFIX));
 
         if (parentPath != null) {
-            Referenceable bucketRef = (Referenceable) directoryRef.get(REL_PARENT);
-            Assertions.assertNotNull(bucketRef);
-            Assertions.assertEquals(parentType, bucketRef.getTypeName());
-            Assertions.assertEquals(parentName, bucketRef.get(ATTR_NAME));
+            DataSet bucketDataSet = getReferredDataSet(directoryDataSet, directoryDataSet.getRelationshipAttribute(AtlasPathExtractorUtil.ATTRIBUTE_GCS_PARENT));
+            Assertions.assertNotNull(bucketDataSet);
+            Assertions.assertEquals(parentType, bucketDataSet.getTypeName());
+            Assertions.assertEquals(parentName, bucketDataSet.getAttribute(ATTR_NAME));
         }
     }
 

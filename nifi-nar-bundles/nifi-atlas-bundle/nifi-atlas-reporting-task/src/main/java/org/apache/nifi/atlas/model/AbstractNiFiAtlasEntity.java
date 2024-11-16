@@ -32,6 +32,8 @@ abstract class AbstractNiFiAtlasEntity implements NiFiAtlasEntity {
 
     private final String id;
 
+    private final String typeName;
+
     private final String qualifiedName;
 
     private final AtlasEntity atlasEntity;
@@ -41,6 +43,7 @@ abstract class AbstractNiFiAtlasEntity implements NiFiAtlasEntity {
     protected final List<String> updateAudit = new ArrayList<>();
 
     protected AbstractNiFiAtlasEntity(String typeName, String id, String namespace) {
+        this.typeName = typeName;
         this.id = id;
         this.qualifiedName = AtlasUtils.toQualifiedName(namespace, this.id);
         this.atlasEntity = new AtlasEntity(typeName, ATTR_QUALIFIED_NAME, this.qualifiedName);
@@ -52,6 +55,7 @@ abstract class AbstractNiFiAtlasEntity implements NiFiAtlasEntity {
         this.atlasEntity = atlasEntity;
         this.qualifiedName = AtlasUtils.getQualifiedName(this.atlasEntity);
         this.id = AtlasUtils.getComponentIdFromQualifiedName(this.qualifiedName);
+        this.typeName = atlasEntity.getTypeName();
 
         notifyFetched();
     }
@@ -59,6 +63,11 @@ abstract class AbstractNiFiAtlasEntity implements NiFiAtlasEntity {
     @Override
     public String getId() {
         return id;
+    }
+
+    @Override
+    public String getTypeName() {
+        return typeName;
     }
 
     @Override

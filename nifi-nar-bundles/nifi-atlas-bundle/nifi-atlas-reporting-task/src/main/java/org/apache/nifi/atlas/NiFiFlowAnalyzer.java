@@ -53,7 +53,7 @@ public class NiFiFlowAnalyzer {
         analyzer.analyzePaths(nifiFlow);
     }
 
-    void analyzeProcessGroup(NiFiFlow nifiFlow, ProcessGroupStatus processGroupStatus) {
+    private void analyzeProcessGroup(NiFiFlow nifiFlow, ProcessGroupStatus processGroupStatus) {
         processGroupStatus.getProcessorStatus().forEach(p -> nifiFlow.addProcessor(p));
         processGroupStatus.getConnectionStatus().forEach(c -> nifiFlow.addConnection(c));
 
@@ -191,7 +191,7 @@ public class NiFiFlowAnalyzer {
         return traversedPathIds.contains(pathId);
     }
 
-    void analyzePaths(NiFiFlow nifiFlow) {
+    private void analyzePaths(NiFiFlow nifiFlow) {
         // Now let's break it into flow paths.
         final Map<String, ProcessorStatus> processors = nifiFlow.getProcessors();
         final Set<String> headProcessComponents = processors.keySet().stream()

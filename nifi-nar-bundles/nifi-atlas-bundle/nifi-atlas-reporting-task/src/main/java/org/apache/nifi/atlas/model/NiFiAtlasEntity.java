@@ -23,6 +23,8 @@ public interface NiFiAtlasEntity {
 
     String getId();
 
+    String getTypeName();
+
     String getQualifiedName();
 
     AtlasEntity getAtlasEntity();

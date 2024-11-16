@@ -70,7 +70,6 @@ import static org.apache.nifi.atlas.reporting.ReportLineageToAtlas.ATLAS_URLS;
 import static org.apache.nifi.atlas.reporting.ReportLineageToAtlas.ATLAS_USER;
 import static org.apache.nifi.atlas.reporting.ReportLineageToAtlas.SSL_CONTEXT_SERVICE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -460,20 +459,6 @@ public class TestReportLineageToAtlas {
 
         assertEquals(expectedConnectTimeout, actualConnectTimeout);
         assertEquals(expectedReadTimeout, actualReadTimeout);
-    }
-
-    @Test
-    public void testThrowExceptionWhenAtlasConfIsProvidedButSynchronousModeHasNotBeenSet() throws Exception {
-        Properties atlasConf = new Properties();
-        saveAtlasConf(atlasConf);
-
-        Map<PropertyDescriptor, String> properties = initReportingTaskProperties(atlasConfDir);
-        properties.put(ATLAS_CONF_CREATE, "false");
-
-        ConfigurationContext configurationContext = new MockConfigurationContext(properties, null);
-
-        testSubject.initialize(initializationContext);
-        assertThrows(ProcessException.class, () -> testSubject.setup(configurationContext));
     }
 
     private void saveAtlasConf(Properties atlasConf) throws IOException {

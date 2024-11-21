@@ -42,13 +42,10 @@ public class NiFiTypes {
     public static final String REL_TYPE_PROCESS_INPUT = "dataset_process_inputs";
     public static final String REL_TYPE_PROCESS_OUTPUT = "process_dataset_outputs";
 
-//    public static final String ATTR_GUID = "guid";
     public static final String ATTR_TYPE_NAME = "typeName";
     public static final String ATTR_NAME = "name";
     public static final String ATTR_CLUSTER_NAME = "clusterName";
     public static final String ATTR_DESCRIPTION = "description";
-//    public static final String ATTR_INPUTS = "inputs";
-//    public static final String ATTR_OUTPUTS = "outputs";
     public static final String ATTR_URL = "url";
     public static final String ATTR_URI = "uri";
     public static final String ATTR_PATH = "path";

@@ -21,7 +21,6 @@ import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzer;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzerFactory;
-import org.apache.nifi.atlas.reporting.ITReportLineageToAtlas;
 import org.apache.nifi.atlas.resolver.NamespaceResolvers;
 import org.apache.nifi.controller.status.PortStatus;
 import org.apache.nifi.provenance.ProvenanceEventRecord;
@@ -40,7 +39,6 @@ import static org.mockito.Mockito.when;
 
 /**
  * Tests for RootGroupPorts.
- * More complex and detailed tests are available at {@link ITReportLineageToAtlas}.
  */
 public class TestNiFiRemotePortServer {
 

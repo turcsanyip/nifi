@@ -21,7 +21,6 @@ import org.apache.nifi.atlas.provenance.DataSet;
 import org.apache.nifi.atlas.provenance.DataSetRefs;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzer;
 import org.apache.nifi.atlas.provenance.NiFiProvenanceEventAnalyzerFactory;
-import org.apache.nifi.atlas.reporting.ITReportLineageToAtlas;
 import org.apache.nifi.atlas.resolver.NamespaceResolvers;
 import org.apache.nifi.controller.status.ConnectionStatus;
 import org.apache.nifi.flowfile.attributes.SiteToSiteAttributes;
@@ -44,7 +43,6 @@ import static org.mockito.Mockito.when;
 
 /**
  * Tests for RemotePorts.
- * More complex and detailed tests are available at {@link ITReportLineageToAtlas}.
  */
 public class TestNiFiRemotePortClient {
 

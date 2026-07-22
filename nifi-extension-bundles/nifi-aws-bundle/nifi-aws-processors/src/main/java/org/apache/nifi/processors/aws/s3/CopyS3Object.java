@@ -51,6 +51,8 @@ import java.util.stream.IntStream;
 import static org.apache.nifi.processors.aws.region.RegionUtil.CUSTOM_REGION_WITH_FF_EL;
 import static org.apache.nifi.processors.aws.region.RegionUtil.REGION;
 import static org.apache.nifi.processors.aws.s3.util.S3Util.createRangeSpec;
+import static org.apache.nifi.processors.aws.signer.CustomSignerSupport.CUSTOM_SIGNER_CLASS_NAME;
+import static org.apache.nifi.processors.aws.signer.CustomSignerSupport.CUSTOM_SIGNER_MODULE_LOCATION;
 
 @Tags({"Amazon", "S3", "AWS", "Archive", "Copy"})
 @InputRequirement(InputRequirement.Requirement.INPUT_REQUIRED)
@@ -100,6 +102,8 @@ public class CopyS3Object extends AbstractS3Processor {
             CANNED_ACL,
             SSL_CONTEXT_SERVICE,
             ENDPOINT_OVERRIDE,
+            CUSTOM_SIGNER_CLASS_NAME,
+            CUSTOM_SIGNER_MODULE_LOCATION,
             PROXY_CONFIGURATION_SERVICE
     );
 

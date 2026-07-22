@@ -101,6 +101,8 @@ import static org.apache.nifi.processors.aws.region.RegionUtil.REGION;
 import static org.apache.nifi.processors.aws.region.RegionUtil.getRegion;
 import static org.apache.nifi.processors.aws.s3.util.S3Util.getRequestPayer;
 import static org.apache.nifi.processors.aws.s3.util.S3Util.sanitizeETag;
+import static org.apache.nifi.processors.aws.signer.CustomSignerSupport.CUSTOM_SIGNER_CLASS_NAME;
+import static org.apache.nifi.processors.aws.signer.CustomSignerSupport.CUSTOM_SIGNER_MODULE_LOCATION;
 
 @PrimaryNodeOnly
 @TriggerSerially
@@ -298,6 +300,8 @@ public class ListS3 extends AbstractS3Processor implements VerifiableProcessor {
         TIMEOUT,
         SSL_CONTEXT_SERVICE,
         ENDPOINT_OVERRIDE,
+        CUSTOM_SIGNER_CLASS_NAME,
+        CUSTOM_SIGNER_MODULE_LOCATION,
         PROXY_CONFIGURATION_SERVICE,
         DELIMITER,
         PREFIX,

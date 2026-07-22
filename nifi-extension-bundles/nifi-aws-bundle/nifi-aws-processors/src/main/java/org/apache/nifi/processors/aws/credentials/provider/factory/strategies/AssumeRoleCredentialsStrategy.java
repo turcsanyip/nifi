@@ -16,6 +16,7 @@
  */
 package org.apache.nifi.processors.aws.credentials.provider.factory.strategies;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.components.ValidationContext;
@@ -23,10 +24,16 @@ import org.apache.nifi.components.ValidationResult;
 import org.apache.nifi.context.PropertyContext;
 import org.apache.nifi.processors.aws.credentials.provider.factory.CredentialsStrategy;
 import org.apache.nifi.processors.aws.credentials.provider.service.AWSCredentialsProviderControllerService;
+import org.apache.nifi.processors.aws.signer.CustomSignerSupport;
 import org.apache.nifi.proxy.ProxyConfiguration;
 import org.apache.nifi.proxy.ProxyConfigurationService;
 import org.apache.nifi.ssl.SSLContextProvider;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.core.interceptor.Context;
+import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
+import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
+import software.amazon.awssdk.http.SdkHttpRequest;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sts.StsClient;
@@ -48,6 +55,7 @@ import static org.apache.nifi.processors.aws.credentials.provider.service.AWSCre
 import static org.apache.nifi.processors.aws.credentials.provider.service.AWSCredentialsProviderControllerService.ASSUME_ROLE_STS_ENDPOINT;
 import static org.apache.nifi.processors.aws.credentials.provider.service.AWSCredentialsProviderControllerService.ASSUME_ROLE_STS_REGION;
 import static org.apache.nifi.processors.aws.credentials.provider.service.AWSCredentialsProviderControllerService.MAX_SESSION_TIME;
+import static org.apache.nifi.processors.aws.signer.CustomSignerSupport.CUSTOM_SIGNER_CLASS_NAME;
 
 /**
  * Supports AWS credentials via Assume Role.  Assume Role is a derived credential strategy, requiring a primary
@@ -145,9 +153,37 @@ public class AssumeRoleCredentialsStrategy extends AbstractCredentialsStrategy {
                 .credentialsProvider(primaryCredentialsProvider)
                 .region(Region.of(stsRegion))
                 .httpClient(httpClientBuilder.build());
+
         if (assumeRoleSTSEndpoint != null && !assumeRoleSTSEndpoint.isEmpty()) {
-            stsClientBuilder.endpointOverride(URI.create(assumeRoleSTSEndpoint));
+            final URI endpointUri = URI.create(assumeRoleSTSEndpoint);
+
+            stsClientBuilder.endpointOverride(endpointUri);
+
+            stsClientBuilder.overrideConfiguration(ClientOverrideConfiguration.builder()
+                    .addExecutionInterceptor(new ExecutionInterceptor() {
+                        @Override
+                        public SdkHttpRequest modifyHttpRequest(Context.ModifyHttpRequest context, ExecutionAttributes executionAttributes) {
+                            // the AWS library drops the path component of the custom endpoint that needs to be restored
+
+                            SdkHttpRequest originalRequest = context.httpRequest();
+
+                            String awsPath = originalRequest.encodedPath();
+
+                            String finalPath = StringUtils.stripEnd(endpointUri.getPath(), "/") + "/" + StringUtils.stripStart(awsPath, "/");
+
+                            return originalRequest.toBuilder()
+                                    .encodedPath(finalPath)
+                                    .build();
+                        }
+                    })
+                    .build());
         }
+
+        final String signerClassName = propertyContext.getProperty(CUSTOM_SIGNER_CLASS_NAME).evaluateAttributeExpressions().getValue();
+        if (StringUtils.isNotBlank(signerClassName)) {
+            CustomSignerSupport.configureCustomSigner(signerClassName, propertyContext, stsClientBuilder);
+        }
+
         final StsClient stsClient = stsClientBuilder.build();
 
         final AssumeRoleRequest.Builder roleRequestBuilder = AssumeRoleRequest.builder()

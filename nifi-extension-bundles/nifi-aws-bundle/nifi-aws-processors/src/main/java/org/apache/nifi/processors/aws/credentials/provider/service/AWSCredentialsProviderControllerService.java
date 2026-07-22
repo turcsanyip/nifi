@@ -53,6 +53,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static org.apache.nifi.processors.aws.signer.CustomSignerSupport.CUSTOM_SIGNER_CLASS_NAME;
+import static org.apache.nifi.processors.aws.signer.CustomSignerSupport.CUSTOM_SIGNER_MODULE_LOCATION;
+
 /**
  * Implementation of AwsCredentialsProviderService interface
  *
@@ -72,10 +75,8 @@ public class AWSCredentialsProviderControllerService extends AbstractControllerS
     private static final String OBSOLETE_PROXY_PORT = "assume-role-proxy-port";
     private static final String OBSOLETE_ASSUME_ROLE_STS_SIGNER_OVERRIDE_1 = "assume-role-sts-signer-override";
     private static final String OBSOLETE_ASSUME_ROLE_STS_SIGNER_OVERRIDE_2 = "Assume Role STS Signer Override";
-    private static final String OBSOLETE_ASSUME_ROLE_STS_CUSTOM_SIGNER_CLASS_NAME_1 = "custom-signer-class-name";
-    private static final String OBSOLETE_ASSUME_ROLE_STS_CUSTOM_SIGNER_CLASS_NAME_2 = "Custom Signer Class Name";
-    private static final String OBSOLETE_ASSUME_ROLE_STS_CUSTOM_SIGNER_MODULE_LOCATION_1 = "custom-signer-module-location";
-    private static final String OBSOLETE_ASSUME_ROLE_STS_CUSTOM_SIGNER_MODULE_LOCATION_2 = "Custom Signer Module Location";
+    private static final String OBSOLETE_ASSUME_ROLE_STS_CUSTOM_SIGNER_CLASS_NAME = "custom-signer-class-name";
+    private static final String OBSOLETE_ASSUME_ROLE_STS_CUSTOM_SIGNER_MODULE_LOCATION = "custom-signer-module-location";
 
     public static final PropertyDescriptor USE_DEFAULT_CREDENTIALS = new PropertyDescriptor.Builder()
         .name("Use Default Credentials")
@@ -232,6 +233,8 @@ public class AWSCredentialsProviderControllerService extends AbstractControllerS
         ASSUME_ROLE_PROXY_CONFIGURATION_SERVICE,
         ASSUME_ROLE_STS_REGION,
         ASSUME_ROLE_STS_ENDPOINT,
+        CUSTOM_SIGNER_CLASS_NAME,
+        CUSTOM_SIGNER_MODULE_LOCATION,
         OAUTH2_ACCESS_TOKEN_PROVIDER
     );
 
@@ -275,10 +278,8 @@ public class AWSCredentialsProviderControllerService extends AbstractControllerS
 
         config.removeProperty(OBSOLETE_ASSUME_ROLE_STS_SIGNER_OVERRIDE_1);
         config.removeProperty(OBSOLETE_ASSUME_ROLE_STS_SIGNER_OVERRIDE_2);
-        config.removeProperty(OBSOLETE_ASSUME_ROLE_STS_CUSTOM_SIGNER_CLASS_NAME_1);
-        config.removeProperty(OBSOLETE_ASSUME_ROLE_STS_CUSTOM_SIGNER_CLASS_NAME_2);
-        config.removeProperty(OBSOLETE_ASSUME_ROLE_STS_CUSTOM_SIGNER_MODULE_LOCATION_1);
-        config.removeProperty(OBSOLETE_ASSUME_ROLE_STS_CUSTOM_SIGNER_MODULE_LOCATION_2);
+        config.renameProperty(OBSOLETE_ASSUME_ROLE_STS_CUSTOM_SIGNER_CLASS_NAME, CUSTOM_SIGNER_CLASS_NAME.getName());
+        config.renameProperty(OBSOLETE_ASSUME_ROLE_STS_CUSTOM_SIGNER_MODULE_LOCATION, CUSTOM_SIGNER_MODULE_LOCATION.getName());
     }
 
     @Override

@@ -73,6 +73,8 @@ import static org.apache.nifi.processors.aws.s3.util.S3Util.getResourceUrl;
 import static org.apache.nifi.processors.aws.s3.util.S3Util.nullIfBlank;
 import static org.apache.nifi.processors.aws.s3.util.S3Util.parseExpirationHeader;
 import static org.apache.nifi.processors.aws.s3.util.S3Util.sanitizeETag;
+import static org.apache.nifi.processors.aws.signer.CustomSignerSupport.CUSTOM_SIGNER_CLASS_NAME;
+import static org.apache.nifi.processors.aws.signer.CustomSignerSupport.CUSTOM_SIGNER_MODULE_LOCATION;
 
 @SupportsBatching
 @SeeAlso({PutS3Object.class, DeleteS3Object.class, ListS3.class, CopyS3Object.class, GetS3ObjectMetadata.class, GetS3ObjectTags.class, TagS3Object.class})
@@ -280,6 +282,8 @@ public class FetchS3Object extends AbstractS3Processor {
         VERSION_ID,
         SSL_CONTEXT_SERVICE,
         ENDPOINT_OVERRIDE,
+        CUSTOM_SIGNER_CLASS_NAME,
+        CUSTOM_SIGNER_MODULE_LOCATION,
         ENCRYPTION_SERVICE,
         PROXY_CONFIGURATION_SERVICE,
         REQUESTER_PAYS,

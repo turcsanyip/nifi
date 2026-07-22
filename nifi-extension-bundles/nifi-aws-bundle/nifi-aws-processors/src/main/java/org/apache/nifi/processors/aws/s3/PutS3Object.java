@@ -96,6 +96,8 @@ import static org.apache.nifi.processors.aws.region.RegionUtil.REGION;
 import static org.apache.nifi.processors.aws.s3.util.S3Util.getResourceUrl;
 import static org.apache.nifi.processors.aws.s3.util.S3Util.parseExpirationHeader;
 import static org.apache.nifi.processors.aws.s3.util.S3Util.sanitizeETag;
+import static org.apache.nifi.processors.aws.signer.CustomSignerSupport.CUSTOM_SIGNER_CLASS_NAME;
+import static org.apache.nifi.processors.aws.signer.CustomSignerSupport.CUSTOM_SIGNER_MODULE_LOCATION;
 import static org.apache.nifi.processors.transfer.ResourceTransferProperties.FILE_RESOURCE_SERVICE;
 import static org.apache.nifi.processors.transfer.ResourceTransferProperties.RESOURCE_TRANSFER_SOURCE;
 import static org.apache.nifi.processors.transfer.ResourceTransferUtils.getFileResource;
@@ -277,6 +279,8 @@ public class PutS3Object extends AbstractS3Processor {
             CANNED_ACL,
             SSL_CONTEXT_SERVICE,
             ENDPOINT_OVERRIDE,
+            CUSTOM_SIGNER_CLASS_NAME,
+            CUSTOM_SIGNER_MODULE_LOCATION,
             MULTIPART_THRESHOLD,
             MULTIPART_PART_SIZE,
             MULTIPART_S3_AGEOFF_INTERVAL,

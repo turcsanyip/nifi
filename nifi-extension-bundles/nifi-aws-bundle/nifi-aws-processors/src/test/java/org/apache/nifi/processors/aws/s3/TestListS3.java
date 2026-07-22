@@ -64,6 +64,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.apache.nifi.processors.aws.region.RegionUtil.REGION;
+import static org.apache.nifi.processors.aws.signer.CustomSignerSupport.CUSTOM_SIGNER_CLASS_NAME;
+import static org.apache.nifi.processors.aws.signer.CustomSignerSupport.CUSTOM_SIGNER_MODULE_LOCATION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -958,6 +960,8 @@ public class TestListS3 {
                         Map.entry("record-writer", ListS3.RECORD_WRITER.getName()),
                         Map.entry("canned-acl", AbstractS3Processor.CANNED_ACL.getName()),
                         Map.entry("encryption-service", AbstractS3Processor.ENCRYPTION_SERVICE.getName()),
+                        Map.entry("custom-signer-class-name", CUSTOM_SIGNER_CLASS_NAME.getName()),
+                        Map.entry("custom-signer-module-location", CUSTOM_SIGNER_MODULE_LOCATION.getName()),
                         Map.entry("use-chunked-encoding", AbstractS3Processor.USE_CHUNKED_ENCODING.getName()),
                         Map.entry("use-path-style-access", AbstractS3Processor.USE_PATH_STYLE_ACCESS.getName()),
                         Map.entry("aws-region", REGION.getName()),
@@ -972,10 +976,6 @@ public class TestListS3 {
 
         Set<String> expectedRemoved = Set.of(
                 "Signer Override",
-                "custom-signer-class-name",
-                "Custom Signer Class Name",
-                "custom-signer-module-location",
-                "Custom Signer Module Location",
                 ObsoleteAbstractAwsProcessorProperties.OBSOLETE_ACCESS_KEY.getValue(),
                 ObsoleteAbstractAwsProcessorProperties.OBSOLETE_SECRET_KEY.getValue(),
                 ObsoleteAbstractAwsProcessorProperties.OBSOLETE_CREDENTIALS_FILE.getValue(),

@@ -29,6 +29,7 @@ import org.apache.nifi.processor.ProcessSession;
 import org.apache.nifi.processor.util.StandardValidators;
 import org.apache.nifi.processors.aws.AbstractAwsSyncProcessor;
 import org.apache.nifi.processors.aws.region.RegionUtil;
+import org.apache.nifi.processors.aws.signer.CustomSignerSupport;
 import software.amazon.awssdk.awscore.defaultsmode.DefaultsMode;
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
@@ -48,6 +49,8 @@ import java.util.stream.Collectors;
 import static org.apache.nifi.processors.aws.region.RegionUtil.CUSTOM_REGION;
 import static org.apache.nifi.processors.aws.region.RegionUtil.REGION;
 import static org.apache.nifi.processors.aws.region.RegionUtil.USE_CUSTOM_REGION;
+import static org.apache.nifi.processors.aws.signer.CustomSignerSupport.CUSTOM_SIGNER_CLASS_NAME;
+import static org.apache.nifi.processors.aws.signer.CustomSignerSupport.CUSTOM_SIGNER_MODULE_LOCATION;
 
 public abstract class AbstractS3Processor extends AbstractAwsSyncProcessor<S3Client, S3ClientBuilderWrapper> {
 
@@ -56,10 +59,8 @@ public abstract class AbstractS3Processor extends AbstractAwsSyncProcessor<S3Cli
     protected static final String OBSOLETE_OWNER = "Owner";
 
     private static final String OBSOLETE_SIGNER_OVERRIDE = "Signer Override";
-    private static final String OBSOLETE_CUSTOM_SIGNER_CLASS_NAME_1 = "custom-signer-class-name";
-    private static final String OBSOLETE_CUSTOM_SIGNER_CLASS_NAME_2 = "Custom Signer Class Name";
-    private static final String OBSOLETE_CUSTOM_SIGNER_MODULE_LOCATION_1 = "custom-signer-module-location";
-    private static final String OBSOLETE_CUSTOM_SIGNER_MODULE_LOCATION_2 = "Custom Signer Module Location";
+    private static final String OBSOLETE_CUSTOM_SIGNER_CLASS_NAME = "custom-signer-class-name";
+    private static final String OBSOLETE_CUSTOM_SIGNER_MODULE_LOCATION = "custom-signer-module-location";
 
     // Obsolete property value and attribute name
     private static final String OBSOLETE_ATTRIBUTE_DEFINED_REGION = "attribute-defined-region";
@@ -181,10 +182,9 @@ public abstract class AbstractS3Processor extends AbstractAwsSyncProcessor<S3Cli
         migrateCannedAcl(config);
 
         config.removeProperty(OBSOLETE_SIGNER_OVERRIDE);
-        config.removeProperty(OBSOLETE_CUSTOM_SIGNER_CLASS_NAME_1);
-        config.removeProperty(OBSOLETE_CUSTOM_SIGNER_CLASS_NAME_2);
-        config.removeProperty(OBSOLETE_CUSTOM_SIGNER_MODULE_LOCATION_1);
-        config.removeProperty(OBSOLETE_CUSTOM_SIGNER_MODULE_LOCATION_2);
+
+        config.renameProperty(OBSOLETE_CUSTOM_SIGNER_CLASS_NAME, CUSTOM_SIGNER_CLASS_NAME.getName());
+        config.renameProperty(OBSOLETE_CUSTOM_SIGNER_MODULE_LOCATION, CUSTOM_SIGNER_MODULE_LOCATION.getName());
     }
 
     private void migrateAttributeDefinedRegion(final PropertyConfiguration config) {
@@ -228,6 +228,11 @@ public abstract class AbstractS3Processor extends AbstractAwsSyncProcessor<S3Cli
         }
 
         clientBuilder.serviceConfiguration(configurationBuilder.build());
+
+        final String signerClassName = context.getProperty(CUSTOM_SIGNER_CLASS_NAME).evaluateAttributeExpressions().getValue();
+        if (StringUtils.isNotBlank(signerClassName)) {
+            CustomSignerSupport.configureCustomSigner(signerClassName, context, clientBuilder);
+        }
 
         return clientBuilder;
     }

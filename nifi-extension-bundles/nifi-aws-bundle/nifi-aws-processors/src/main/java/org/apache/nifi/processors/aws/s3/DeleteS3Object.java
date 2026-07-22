@@ -42,6 +42,8 @@ import static org.apache.nifi.processors.aws.region.RegionUtil.CUSTOM_REGION_WIT
 import static org.apache.nifi.processors.aws.region.RegionUtil.REGION;
 import static org.apache.nifi.processors.aws.s3.util.S3Util.getResourceUrl;
 import static org.apache.nifi.processors.aws.s3.util.S3Util.nullIfBlank;
+import static org.apache.nifi.processors.aws.signer.CustomSignerSupport.CUSTOM_SIGNER_CLASS_NAME;
+import static org.apache.nifi.processors.aws.signer.CustomSignerSupport.CUSTOM_SIGNER_MODULE_LOCATION;
 
 @SupportsBatching
 @WritesAttributes({
@@ -74,6 +76,8 @@ public class DeleteS3Object extends AbstractS3Processor {
             VERSION_ID,
             SSL_CONTEXT_SERVICE,
             ENDPOINT_OVERRIDE,
+            CUSTOM_SIGNER_CLASS_NAME,
+            CUSTOM_SIGNER_MODULE_LOCATION,
             PROXY_CONFIGURATION_SERVICE
     );
 

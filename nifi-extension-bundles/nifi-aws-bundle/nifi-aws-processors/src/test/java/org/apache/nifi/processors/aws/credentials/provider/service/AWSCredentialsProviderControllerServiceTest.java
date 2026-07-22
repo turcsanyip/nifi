@@ -50,6 +50,8 @@ import static org.apache.nifi.processors.aws.credentials.provider.service.AWSCre
 import static org.apache.nifi.processors.aws.credentials.provider.service.AWSCredentialsProviderControllerService.SECRET_KEY;
 import static org.apache.nifi.processors.aws.credentials.provider.service.AWSCredentialsProviderControllerService.USE_ANONYMOUS_CREDENTIALS;
 import static org.apache.nifi.processors.aws.credentials.provider.service.AWSCredentialsProviderControllerService.USE_DEFAULT_CREDENTIALS;
+import static org.apache.nifi.processors.aws.signer.CustomSignerSupport.CUSTOM_SIGNER_CLASS_NAME;
+import static org.apache.nifi.processors.aws.signer.CustomSignerSupport.CUSTOM_SIGNER_MODULE_LOCATION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -496,6 +498,8 @@ public class AWSCredentialsProviderControllerServiceTest {
                 Map.entry("assume-role-ssl-context-service", ASSUME_ROLE_SSL_CONTEXT_SERVICE.getName()),
                 Map.entry("assume-role-proxy-configuration-service", ASSUME_ROLE_PROXY_CONFIGURATION_SERVICE.getName()),
                 Map.entry("assume-role-sts-endpoint", ASSUME_ROLE_STS_ENDPOINT.getName()),
+                Map.entry("custom-signer-class-name", CUSTOM_SIGNER_CLASS_NAME.getName()),
+                Map.entry("custom-signer-module-location", CUSTOM_SIGNER_MODULE_LOCATION.getName()),
                 Map.entry("Session Time", MAX_SESSION_TIME.getName()),
                 Map.entry(ProxyServiceMigration.OBSOLETE_PROXY_CONFIGURATION_SERVICE, ProxyServiceMigration.PROXY_CONFIGURATION_SERVICE)
         );
@@ -507,8 +511,7 @@ public class AWSCredentialsProviderControllerServiceTest {
         assertEquals(expectedRenamed, propertiesRenamed);
 
         final Set<String> expectedRemoved = new HashSet<>(Arrays.asList(null, "assume-role-proxy-host", "assume-role-proxy-port", "assume-role-sts-signer-override",
-                "Assume Role STS Signer Override", "custom-signer-class-name", "Custom Signer Class Name",
-                "custom-signer-module-location", "Custom Signer Module Location"));
+                "Assume Role STS Signer Override"));
 
         assertEquals(expectedRemoved, result.getPropertiesRemoved());
     }
